@@ -79,7 +79,8 @@ def floquet_analysis(
 def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
     """Reinitialize a FloquetAnalysis object from file.
 
-    Here we only reinitialize the input parameters and not the computed data."""
+    Here we only reinitialize the input parameters and not the computed data.
+    """
     _, param_dict = extract_info_from_h5(filepath)
     floquet_init = ast.literal_eval(param_dict['floquet_analysis_init'])
     return floquet_analysis(
@@ -144,7 +145,7 @@ class FloquetAnalysis:
         )
         self.all_quasienergies = np.zeros_like(self.avg_excitation)
 
-    def _get_initdata(self) -> dict:
+    def get_initdata(self) -> dict:
         """Collect all init attributes for writing to file."""
         init_dict = {k: v for k, v in self.__dict__.items() if k in self._init_attrs}
         new_init_dict = {}
@@ -172,14 +173,14 @@ class FloquetAnalysis:
             'num_fit_ranges': self._num_fit_ranges,
             'num_amp_pts_per_range': self._num_amp_pts_per_range,
             'exp_pair_map': self.exponent_pair_idx_map,
-            'floquet_analysis_init': self._get_initdata(),
+            'floquet_analysis_init': self.get_initdata(),
         }
 
-    def __str__(self):
+    def __str__(self) -> str:
         params = self.param_dict()
         params.pop('floquet_analysis_init')
         parts_str = '\n'.join(f'{k}: {v}' for k, v in params.items() if v is not None)
-        return f'Running floquet simulation with parameters: \n' + parts_str
+        return 'Running floquet simulation with parameters: \n' + parts_str
 
     def assemble_data_dict(self) -> dict:
         """Collect all computed data in preparation for writing to file."""
@@ -234,7 +235,7 @@ class FloquetAnalysis:
             f_modes_t = f_modes_0
         return f_modes_t, f_energies_0
 
-    def _calculate_modes_quasies_ovlps(
+    def calculate_modes_quasies_ovlps(
         self,
         f_modes_energies: tuple[np.ndarray, qt.Qobj],
         params_0: tuple[float, float],
@@ -413,7 +414,7 @@ class FloquetAnalysis:
             )
             # save the extracted overlaps for later use when fitting over the whole
             # shebang
-            self._displaced_state_overlaps[:, amp_idxs[0]: amp_idxs[1], :] = overlaps
+            self._displaced_state_overlaps[:, amp_idxs[0] : amp_idxs[1], :] = overlaps
             update_data_in_h5(filepath, self.assemble_data_dict())
         # the previously extracted coefficients were valid for the amplitude ranges
         # we asked for the fit over. Now armed with with correctly identified floquet
@@ -438,7 +439,7 @@ class FloquetAnalysis:
         prev_f_modes_arr: np.ndarray,
     ) -> np.ndarray:
         """Run the floquet simulation over a specific amplitude range."""
-        amp_range_vals = self.amp_linspace[amp_idxs[0]: amp_idxs[1]]
+        amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
 
         def _run_floquet_and_calculate(
             omega_d: float,
@@ -458,7 +459,7 @@ class FloquetAnalysis:
             for amp_idx, amp in enumerate(amps_for_omega_d):
                 params = (omega_d, amp)
                 f_modes_energies = self.run_one_floquet(params)
-                modes_quasies_ovlps = self._calculate_modes_quasies_ovlps(
+                modes_quasies_ovlps = self.calculate_modes_quasies_ovlps(
                     f_modes_energies, params_0, disp_coeffs_for_prev_amp
                 )
                 modes_quasies_ovlps_arr[amp_idx] = modes_quasies_ovlps
@@ -497,22 +498,22 @@ class FloquetAnalysis:
         f_modes_last_amp = np.array(f_modes_last_amp, dtype=complex).reshape(
             (len(self.omega_d_linspace), self.num_states, self.num_states)
         )
-        self.max_overlap_data[:, amp_idxs[0]: amp_idxs[1]] = np.real(
+        self.max_overlap_data[:, amp_idxs[0] : amp_idxs[1]] = np.real(
             floquet_mode_array[..., 0]
         )
-        self.floquet_mode_idxs[:, amp_idxs[0]: amp_idxs[1]] = np.real(
+        self.floquet_mode_idxs[:, amp_idxs[0] : amp_idxs[1]] = np.real(
             floquet_mode_array[..., 1]
         )
-        self.quasienergies[:, amp_idxs[0]: amp_idxs[1]] = np.real(
+        self.quasienergies[:, amp_idxs[0] : amp_idxs[1]] = np.real(
             floquet_mode_array[..., 2]
         )
-        self.floquet_mode_data[:, amp_idxs[0]: amp_idxs[1]] = floquet_mode_array[
+        self.floquet_mode_data[:, amp_idxs[0] : amp_idxs[1]] = floquet_mode_array[
             ..., 3:
         ]
-        self.avg_excitation[:, amp_idxs[0]: amp_idxs[1]] = np.array(
+        self.avg_excitation[:, amp_idxs[0] : amp_idxs[1]] = np.array(
             all_avg_excitation
         ).reshape((len(self.omega_d_linspace), len(amp_range_vals), self.num_states))
-        self.all_quasienergies[:, amp_idxs[0]: amp_idxs[1]] = np.array(
+        self.all_quasienergies[:, amp_idxs[0] : amp_idxs[1]] = np.array(
             all_quasienergies
         ).reshape((len(self.omega_d_linspace), len(amp_range_vals), self.num_states))
         return f_modes_last_amp
@@ -522,7 +523,7 @@ class FloquetAnalysis:
         if amp_idxs is None:
             amp_range_vals = self.amp_linspace
         else:
-            amp_range_vals = self.amp_linspace[amp_idxs[0]: amp_idxs[1]]
+            amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
         _omega_d_amp_params = [
             product([omega_d], amp_vals)
             for omega_d, amp_vals in zip(
@@ -545,7 +546,7 @@ class FloquetAnalysis:
             )
 
         omega_d_amp_params = self._omega_d_amp_params(amp_idxs)
-        amp_range_vals = self.amp_linspace[amp_idxs[0]: amp_idxs[1]]
+        amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
         result = list(
             parallel_map(
                 self.options.num_cpus, run_overlap_displaced, omega_d_amp_params
@@ -628,7 +629,7 @@ class FloquetAnalysis:
             floquet_idx_data = self.floquet_mode_data[:, :, array_idx, :]
         else:
             floquet_idx_data = self.floquet_mode_data[
-                :, amp_idxs[0]: amp_idxs[1], array_idx, :
+                :, amp_idxs[0] : amp_idxs[1], array_idx, :
             ]
         if disp_coeffs_for_prev_amp is None:
             # this means we are on the final lap, and want to compare with previously

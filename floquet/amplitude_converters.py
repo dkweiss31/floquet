@@ -9,7 +9,7 @@ class ChiacToAmp:
     $H_I = g(ab^{\dagger} + a^{\dagger}b)$. If the oscillator is driven to
     an average occupation number of $\bar{n}$, then the effective drive strength
     seen by the qubit is $\Omega_d = 2 g \sqrt{\bar{n}}$. On the other hand based
-    on a Schrieffer-Wolff transformation, the interaction hamiltonian is 
+    on a Schrieffer-Wolff transformation, the interaction hamiltonian is
     $H^{(2)} = \chi a^{\dagger}ab^{\dagger}b$. The average induced
     ac-stark shift is then $\chi_{ac} = \chi \bar{n}$. Thus $\Omega_d = 2g\sqrt{\chi_{\rm ac}/\chi}$.
     Observe that since $\chi \sim g^2$, $g$ effectively cancels out and can be set to 1.
@@ -35,9 +35,7 @@ class ChiacToAmp:
         # 2 pi GHz, while H1 is unitless. Thus chis_for_omega_d has units of
         # 1/(2 pi GHz) so the below has units of 2 pi GHz as required.
         return np.einsum(
-            'a,w->aw',
-            2.0 * np.sqrt(chi_ac_linspace),
-            1.0 / np.sqrt(chis_for_omega_d),
+            'a,w->aw', 2.0 * np.sqrt(chi_ac_linspace), 1.0 / np.sqrt(chis_for_omega_d)
         )
 
     def compute_chis_for_omega_d(self) -> np.ndarray:
@@ -61,11 +59,7 @@ class ChiacToAmp:
 
     @staticmethod
     def chi_ell_ellp(
-        energies: np.ndarray,
-        H1: np.ndarray,
-        E_osc: float,
-        ell: int,
-        ellp: int,
+        energies: np.ndarray, H1: np.ndarray, E_osc: float, ell: int, ellp: int
     ) -> np.ndarray:
         E_ell_ellp = energies[ell] - energies[ellp]
         return np.abs(H1[ell, ellp]) ** 2 / (E_ell_ellp - E_osc)

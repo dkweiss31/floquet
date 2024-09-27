@@ -90,7 +90,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
                 omega_d, amp, disp_coeffs[arr_idx], state_idx=state_idx
             )
             f_modes_energies = floquet_transmon.run_one_floquet((omega_d, amp))
-            floquet_mode = floquet_transmon._calculate_modes_quasies_ovlps(
+            floquet_mode = floquet_transmon.calculate_modes_quasies_ovlps(
                 f_modes_energies, (omega_d, amp), disp_coeffs
             )
             overlap = np.abs(
@@ -101,7 +101,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
             assert 0.98 < overlap < 1.0
     # reinit
     reinit_floquet_transmon = floquet_analysis_from_file(filepath)
-    assert reinit_floquet_transmon._get_initdata() == floquet_transmon._get_initdata()
+    assert reinit_floquet_transmon.get_initdata() == floquet_transmon.get_initdata()
 
 
 def test_displaced_bare_state(setup_floquet):
