@@ -1,10 +1,8 @@
 # Python API
 
-The **floquet** Python API consists of the **FloquetAnalysis** class function **optimize** which performs optimal control, and various models
-that can be optimized including **SESolveModel** and **MESolveModel**. There are additionally various utility functions
-and classes that help to define an optimization routine (cost functions, file input output, options, etc.)
+The **floquet** Python API consists largely of the **floquet_analysis** function which initializes a **FloquetAnalysis** class. We can then call `run(filepath)` on instances of this class to perform the Floquet simulation. The computed data is then saved both as attributes of the class and also to the file specified by `filepath`, which should be a string specifying a `h5py` file.
 
-## Optimization
+## Floquet methods
 
 ::: floquet.floquet
     options:

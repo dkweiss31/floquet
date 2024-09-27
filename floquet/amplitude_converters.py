@@ -12,10 +12,7 @@ class ChiacToAmp:
     on a Schrieffer-Wolff transformation, the interaction hamiltonian is 
     $H^{(2)} = \chi a^{\dagger}ab^{\dagger}b$. The average induced
     ac-stark shift is then $\chi_{ac} = \chi \bar{n}$. Thus $\Omega_d = 2g\sqrt{\chi_{\rm ac}/\chi}$.
-    Observe that since $\chi \sim g^2$, $g$ effectively cancels out and can be set to 1
-    (still need 2 pi out front since result needs to have units of radial frequency to 
-    be a drive strength. So really we are taking $g = 2 \pi g'$ where $g$ has the right units
-    and $g'$ has units of GHz and we are setting $g'=1$)
+    Observe that since $\chi \sim g^2$, $g$ effectively cancels out and can be set to 1.
     """  # noqa E501
 
     def __init__(
@@ -34,6 +31,9 @@ class ChiacToAmp:
         if isinstance(chi_ac_linspace, float):
             chi_ac_linspace = np.array([chi_ac_linspace])
         chis_for_omega_d = self.compute_chis_for_omega_d()
+        # Note that the below has the right units because chi_ac_linspace has units of
+        # 2 pi GHz, while H1 is unitless. Thus chis_for_omega_d has units of
+        # 1/(2 pi GHz) so the below has units of 2 pi GHz as required.
         return np.einsum(
             'a,w->aw',
             2.0 * np.sqrt(chi_ac_linspace),
@@ -41,6 +41,10 @@ class ChiacToAmp:
         )
 
     def compute_chis_for_omega_d(self) -> np.ndarray:
+        """Compute chi difference for the first two states in state_indices.
+
+        Based on the analysis in Zhu et al PRB (2013)
+        """
         chi_0 = self.chi_ell(
             np.diag(self.H0.full()),
             self.H1.full(),
@@ -57,22 +61,22 @@ class ChiacToAmp:
 
     @staticmethod
     def chi_ell_ellp(
-        qubit_energies: np.ndarray,
-        op_mat: np.ndarray,
+        energies: np.ndarray,
+        H1: np.ndarray,
         E_osc: float,
         ell: int,
         ellp: int,
     ) -> np.ndarray:
-        E_ell_ellp = qubit_energies[ell] - qubit_energies[ellp]
-        return np.abs(op_mat[ell, ellp]) ** 2 / (E_ell_ellp - E_osc)
+        E_ell_ellp = energies[ell] - energies[ellp]
+        return np.abs(H1[ell, ellp]) ** 2 / (E_ell_ellp - E_osc)
 
     def chi_ell(
-        self, qubit_energies: np.ndarray, op_mat: np.ndarray, E_osc: float, ell: int
+        self, energies: np.ndarray, H1: np.ndarray, E_osc: float, ell: int
     ) -> np.ndarray:
-        n = len(qubit_energies)
+        n = len(energies)
         return sum(
-            self.chi_ell_ellp(qubit_energies, op_mat, E_osc, ell, ellp)
-            - self.chi_ell_ellp(qubit_energies, op_mat, E_osc, ellp, ell)
+            self.chi_ell_ellp(energies, H1, E_osc, ell, ellp)
+            - self.chi_ell_ellp(energies, H1, E_osc, ellp, ell)
             for ellp in range(n)
         )
 

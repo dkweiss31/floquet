@@ -45,6 +45,10 @@ def floquet_analysis(
             Options for the Floquet analysis.
         init_data_to_save: dict | None
             Initial parameter metadata to save to file. Defaults to None.
+
+    Returns:
+        FloquetAnalysis object on which we can call run() to perform the full floquet
+            simulation.
     """
     if state_indices is None:
         state_indices = [0, 1]
@@ -73,6 +77,9 @@ def floquet_analysis(
 
 
 def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
+    """Reinitialize a FloquetAnalysis object from file.
+
+    Here we only reinitialize the input parameters and not the computed data."""
     _, param_dict = extract_info_from_h5(filepath)
     floquet_init = ast.literal_eval(param_dict['floquet_analysis_init'])
     return floquet_analysis(
@@ -138,7 +145,7 @@ class FloquetAnalysis:
         self.all_quasienergies = np.zeros_like(self.avg_excitation)
 
     def _get_initdata(self) -> dict:
-        """Collect all attributes for writing to file."""
+        """Collect all init attributes for writing to file."""
         init_dict = {k: v for k, v in self.__dict__.items() if k in self._init_attrs}
         new_init_dict = {}
         for k, v in init_dict.items():
@@ -153,6 +160,7 @@ class FloquetAnalysis:
         return new_init_dict
 
     def param_dict(self) -> dict:
+        """Collect all attributes for writing to file, including derived ones."""
         if self.init_data_to_save is None:
             self.init_data_to_save = {}
         param_dict = vars(self.options) | self.init_data_to_save
@@ -172,15 +180,6 @@ class FloquetAnalysis:
         params.pop('floquet_analysis_init')
         parts_str = '\n'.join(f'{k}: {v}' for k, v in params.items() if v is not None)
         return f'Running floquet simulation with parameters: \n' + parts_str
-
-    def run(self, filepath: str = 'tmp.h5py') -> None:
-        """Run the whole floquet simulation."""
-        write_to_h5(filepath, {}, self.param_dict())
-        print(self)
-        start_time = time.time()
-        self.floquet_main(filepath=filepath)
-        print(f'finished floquet main in {(time.time()-start_time)/60} minutes')
-        update_data_in_h5(filepath, self.assemble_data_dict())
 
     def assemble_data_dict(self) -> dict:
         """Collect all computed data in preparation for writing to file."""
@@ -343,7 +342,7 @@ class FloquetAnalysis:
             overlap[array_idx] = np.abs(disp_state.data.toarray()[0] @ floquet_data)
         return overlap
 
-    def floquet_main(self, filepath: str = 'tmp.h5py') -> None:
+    def run(self, filepath: str = 'tmp.h5py') -> None:
         """Perform floquet analysis over range of amplitudes and drive frequencies.
 
         This function largely performs two calculations. The first is the Xiao analysis
@@ -370,6 +369,10 @@ class FloquetAnalysis:
         We thus use the fit from the previous range of drive amplitudes as our new bare
         state.
         """
+        # Write the parameters to file and print them out
+        write_to_h5(filepath, {}, self.param_dict())
+        print(self)
+        start_time = time.time()
         # for all omega_d, the bare states are identical at zero drive. We define
         # two sets of bare modes (prev_f_modes_arr and disp_coeffs_for_prev_amp)
         # because for the fit calculation, the bare modes are specified as fit
@@ -425,6 +428,8 @@ class FloquetAnalysis:
             [0, len(self.amp_linspace)], full_displaced_fit
         )
         self.displaced_state_overlaps[:, :, :] = true_overlaps
+        print(f'finished in {(time.time() - start_time) / 60} minutes')
+        update_data_in_h5(filepath, self.assemble_data_dict())
 
     def _floquet_main_for_amp_range(
         self,
