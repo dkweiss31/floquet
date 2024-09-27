@@ -30,7 +30,8 @@ class Options:
         different values of omega_d, amp. Defaults to 1.
     save_floquet_mode_data: bool
         Indicating whether to save the extracted Floquet modes themselves. Such data is
-        often unnecesary and requires a fair amount of storage, so the default is False.
+        often unnecessary and requires a fair amount of storage, so the default is
+        False.
     """
 
     def __init__(
