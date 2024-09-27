@@ -1,0 +1,132 @@
+[project]
+name = "floquet"
+version = "0.1.0"
+requires-python = ">=3.10"
+description = "Floquet simulations for identifying resonances in quantum systems."
+dependencies = [
+    "numpy",
+    "scipy",
+    "scqubits",
+    "qutip>=4.7.6,<5.0",
+    "matplotlib",
+    "jupyter",
+    "h5py",
+    "ipython",
+    "pathos",
+]
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project.optional-dependencies]
+dev = [
+    "taskipy",
+    "ruff",
+    "codespell",
+    "pygments",
+    "pytest>=7.0,<8.0",
+    "pytest-xdist",
+    "pymdown-extensions",
+    "mkdocs",
+    "mkdocs-material",
+    "mkdocstrings[python]",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-section-index",
+    "mkdocs-simple-hooks",
+    "mkdocs-glightbox",
+    "mkdocs-exclude",
+    "mknotebooks",
+    "nbconvert==6.5.0",
+    "sybil>=6",
+    "black",  # needed by mkdocstrings to format function signatures
+]
+
+[tool.ruff]
+extend-include = ["*.ipynb"]
+exclude = ["examples/*.py", "examples/*.ipynb"]
+
+[tool.ruff.format]
+quote-style = "single"
+docstring-code-format = true
+skip-magic-trailing-comma = true
+
+[tool.ruff.lint]
+select = [
+    "F", "E", "W", "C90", "I", "D", "UP", "YTT", "ANN", "BLE", "B", "A", "C4", "FA",
+    "INP", "NPY201", "PIE", "T20", "PYI", "PT", "RSE", "RET", "SLF", "SIM", "INT",
+    "ARG", "PTH", "PL", "TRY", "FLY", "NPY", "RUF",
+]
+extend-select = ["D204", "D400", "D404", "D406", "D410"]
+ignore = [
+    "E741",
+    "C901",
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D417",
+    "ANN101", "ANN003",
+    "TRY003",
+    "PLR2004", "PLR0912", "PLR0913",
+    "T201"
+]
+
+[tool.ruff.lint.isort]
+split-on-trailing-comma = false
+
+[tool.ruff.lint.flake8-annotations]
+suppress-none-returning = true
+
+[tool.ruff.lint.flake8-comprehensions]
+allow-dict-calls-with-keyword-arguments = true
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401", "PLC0414"]
+"tests/**.py" = ["ANN"]
+"examples/**.py" = ["INP001"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.codespell]
+skip = ".git,*.ipynb"
+
+# === taskipy tasks definition ===
+
+[tool.taskipy.tasks.lint]
+cmd = 'echo "\n>>> ruff check --fix" && ruff check --fix'
+help = "lint the code (ruff)"
+
+[tool.taskipy.tasks.format]
+cmd = 'echo "\n>>> ruff format" && ruff format'
+help = "auto-format the code (ruff)"
+
+[tool.taskipy.tasks.codespell]
+cmd = 'echo "\n>>> codespell" && codespell tests floquet'
+help = "check for misspellings (codespell)"
+
+[tool.taskipy.tasks.clean]
+cmd = 'task lint && task format && task codespell'
+help = "clean the code (ruff + codespell)"
+
+[tool.taskipy.tasks.test]
+cmd = 'echo "\n>>> pytest -n=auto tests" && pytest -n=auto tests'
+help = "run the unit tests suite (pytest)"
+
+[tool.taskipy.tasks.docbuild]
+cmd = 'mkdocs build'
+help = "build the documentation website"
+
+[tool.taskipy.tasks.docserve]
+cmd = 'mkdocs serve'
+help = "preview documentation website with hot-reloading"
+
+[tool.taskipy.tasks.all]
+cmd = 'task clean && task test'
+help = "run all tasks before a commit (ruff + codespell + pytest + doctest)"
+
+[tool.taskipy.tasks.ci]
+cmd = '''echo "\n>>> ruff check" && ruff check &&
+         echo "\n>>> ruff format --check" && ruff format --check &&
+         task codespell &&
+         task test &&
+         task docbuild'''
+help = "run all the CI checks"
