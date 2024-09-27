@@ -7,7 +7,7 @@ dependencies = [
     "numpy",
     "scipy",
     "scqubits",
-    "qutip>=4.7.6,<5.0",
+    "qutip>=4.7.6",
     "matplotlib",
     "jupyter",
     "h5py",
