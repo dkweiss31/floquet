@@ -41,7 +41,6 @@ class Options:
         overlap_cutoff: float = 0.8,
         nsteps: int = 30_000,
         num_cpus: int = 1,
-        init_data_to_save: dict | None = None,
         save_floquet_mode_data: bool = False,
     ):
         self.fit_range_fraction = fit_range_fraction
@@ -50,5 +49,4 @@ class Options:
         self.overlap_cutoff = overlap_cutoff
         self.nsteps = nsteps
         self.num_cpus = num_cpus
-        self.init_data_to_save = init_data_to_save
         self.save_floquet_mode_data = save_floquet_mode_data
