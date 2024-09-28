@@ -21,8 +21,6 @@ def floquet_analysis(
     H1: qt.Qobj | np.ndarray | list,
     drive_parameters: DriveParameters,
     state_indices: list | None = None,
-    omega_d_linspace: np.ndarray | list = 2.0 * np.pi * np.linspace(6.9, 13, 50),  # noqa B008
-    amp_linspace: np.ndarray | list = 2.0 * np.pi * np.linspace(0.0, 0.2, 51),  # noqa B008
     options: Options = Options(),  # noqa B008
     init_data_to_save: dict | None = None,
 ) -> FloquetAnalysis:
