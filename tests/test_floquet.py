@@ -11,6 +11,7 @@ from floquet import (
     XiSqToAmp,
     floquet_analysis,
     floquet_analysis_from_file,
+    DriveParameters
 )
 
 
@@ -29,7 +30,7 @@ def setup_floquet():
     ncut = 21
     INIT_DATA_TO_SAVE = {'EJ': EJ, 'EC': EC, 'ng': ng, 'ncut': ncut}
     tmon = scq.Transmon(EJ=29.0, EC=0.155, ng=0.0, ncut=21, truncated_dim=num_states)
-    omega_d_linspace = 2.0 * np.pi * np.linspace(6.9, 13, 39)
+    omega_d_values = 2.0 * np.pi * np.linspace(6.9, 13, 39)
     chi_ac_linspace = 2.0 * np.pi * np.linspace(0.0, 0.2, 40)
     state_indices = [0, 1, 3]
 
@@ -40,14 +41,14 @@ def setup_floquet():
     H1 = hilbert_space.op_in_dressed_eigenbasis(tmon.n_operator)
 
     options = Options(fit_range_fraction=0.5, num_cpus=6)
-    chi_to_amp = ChiacToAmp(H0, H1, state_indices, omega_d_linspace)
-    amp_linspace = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
+    chi_to_amp = ChiacToAmp(H0, H1, state_indices, omega_d_values)
+    drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
+    drive_parameters = DriveParameters(omega_d_values, drive_amplitudes)
     floquet_transmon = floquet_analysis(
         H0,
         H1,
-        state_indices,
-        omega_d_linspace=omega_d_linspace,
-        amp_linspace=amp_linspace,
+        drive_parameters,
+        state_indices=state_indices,
         options=options,
         init_data_to_save=INIT_DATA_TO_SAVE,
     )
@@ -56,14 +57,14 @@ def setup_floquet():
 
 def test_chi_vs_xi(setup_floquet):
     floquet_transmon, _, chi_ac_linspace = setup_floquet
-    amps_from_chi_ac = floquet_transmon.amp_linspace
+    amps_from_chi_ac = floquet_transmon.drive_parameters.drive_amplitudes
     EC = floquet_transmon.init_data_to_save['EC']
     xi_sq_linspace = 2.0 * chi_ac_linspace / EC / 2 / np.pi
     xi_sq_to_amp = XiSqToAmp(
         floquet_transmon.H0,
         floquet_transmon.H1,
         floquet_transmon.state_indices,
-        floquet_transmon.omega_d_linspace,
+        floquet_transmon.drive_parameters.omega_d_values,
     )
     amps_from_xi_sq = xi_sq_to_amp.amplitudes_for_omega_d(xi_sq_linspace)
     rel_diff = np.abs(
@@ -82,7 +83,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
     chi_ac_vals = np.array([0.01, 0.03, 0.05, 0.08, 0.1, 0.15, 0.19])
     omega_d_chi_ac = itertools.product(omega_d_vals, chi_ac_vals)
     for omega_d, chi_ac in omega_d_chi_ac:
-        omega_d_idx = floquet_transmon.omega_d_to_idx(omega_d)
+        omega_d_idx = floquet_transmon.drive_parameters.omega_d_to_idx(omega_d)
         amp = chi_to_amp.amplitudes_for_omega_d(chi_ac)[0, omega_d_idx]
         for arr_idx, state_idx in enumerate(floquet_transmon.state_indices):
             disp_coeffs = floquet_transmon.coefficient_matrix

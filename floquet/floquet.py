@@ -19,6 +19,7 @@ from .utils.parallel import parallel_map
 def floquet_analysis(
     H0: qt.Qobj | np.ndarray | list,
     H1: qt.Qobj | np.ndarray | list,
+    drive_parameters: DriveParameters,
     state_indices: list | None = None,
     omega_d_linspace: np.ndarray | list = 2.0 * np.pi * np.linspace(6.9, 13, 50),  # noqa B008
     amp_linspace: np.ndarray | list = 2.0 * np.pi * np.linspace(0.0, 0.2, 51),  # noqa B008
@@ -32,15 +33,10 @@ def floquet_analysis(
             Drift Hamiltonian (ideally diagonal)
         H1: qt.Qobj | np.ndarray | list
             drive operator
+        drive_parameters: DriveParameters
+            Class specifying the drive amplitudes and frequencies
         state_indices: list
             state indices of interest
-        omega_d_linspace: ndarray | list
-            drive frequencies to scan over
-        amp_linspace: ndarray | list
-            amp values to scan over. Can be one dimensional in which case
-            these amplitudes are used for all omega_d, or it can be two dimensional
-            in which case the first dimension are the amplitudes to scan over
-            and the second are the amplitudes for respective drive frequencies
         options: Options
             Options for the Floquet analysis.
         init_data_to_save: dict | None
@@ -56,21 +52,11 @@ def floquet_analysis(
         H0 = qt.Qobj(np.array(H0, dtype=complex))
     if not isinstance(H1, qt.Qobj):
         H1 = qt.Qobj(np.array(H1, dtype=complex))
-    if isinstance(omega_d_linspace, list):
-        omega_d_linspace = np.array(omega_d_linspace)
-    if isinstance(amp_linspace, list):
-        amp_linspace = np.array(amp_linspace)
-    if len(amp_linspace.shape) == 1:
-        amp_linspace = np.tile(amp_linspace, (len(omega_d_linspace), 1)).T
-    else:
-        assert len(amp_linspace.shape) == 2
-        assert amp_linspace.shape[1] == len(omega_d_linspace)
     return FloquetAnalysis(
         H0,
         H1,
+        drive_parameters,
         state_indices,
-        omega_d_linspace,
-        amp_linspace,
         options,
         init_data_to_save=init_data_to_save,
     )
@@ -80,18 +66,73 @@ def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
     """Reinitialize a FloquetAnalysis object from file.
 
     Here we only reinitialize the input parameters and not the computed data.
+
+    Arguments:
+        filepath: str
+            Path to the file
+
+    Returns:
+        FloquetAnalysis object with identical initial parameters to the one previously
+            written to file.
     """
     _, param_dict = extract_info_from_h5(filepath)
     floquet_init = ast.literal_eval(param_dict['floquet_analysis_init'])
     return floquet_analysis(
         floquet_init['H0'],
         floquet_init['H1'],
+        drive_parameters=DriveParameters(**floquet_init['drive_parameters']),
         state_indices=floquet_init['state_indices'],
-        omega_d_linspace=floquet_init['omega_d_linspace'],
-        amp_linspace=floquet_init['amp_linspace'],
         options=Options(**floquet_init['options']),
         init_data_to_save=floquet_init['init_data_to_save'],
     )
+
+
+class DriveParameters:
+    """Class that handles the drive strength and frequency.
+
+    Parameters:
+        omega_d_values: ndarray | list
+            drive frequencies to scan over
+        drive_amplitudes: ndarray | list
+            amp values to scan over. Can be one dimensional in which case
+            these amplitudes are used for all omega_d, or it can be two dimensional
+            in which case the first dimension are the amplitudes to scan over
+            and the second are the amplitudes for respective drive frequencies
+    """
+
+    def __init__(self, omega_d_values: np.ndarray, drive_amplitudes: np.ndarray):
+        if isinstance(omega_d_values, list):
+            omega_d_values = np.array(omega_d_values)
+        if isinstance(drive_amplitudes, list):
+            drive_amplitudes = np.array(drive_amplitudes)
+        if len(drive_amplitudes.shape) == 1:
+            drive_amplitudes = np.tile(drive_amplitudes, (len(omega_d_values), 1)).T
+        else:
+            assert len(drive_amplitudes.shape) == 2
+            assert drive_amplitudes.shape[1] == len(omega_d_values)
+        self.omega_d_values = omega_d_values
+        self.drive_amplitudes = drive_amplitudes
+
+    def omega_d_to_idx(self, omega_d: float) -> np.ndarray[int]:
+        return np.argmin(np.abs(self.omega_d_values - omega_d))
+
+    def amp_to_idx(self, amp: float, omega_d: float) -> np.ndarray[int]:
+        omega_d_idx = self.omega_d_to_idx(omega_d)
+        return np.argmin(np.abs(self.drive_amplitudes[:, omega_d_idx] - amp))
+
+    def omega_d_amp_params(self, amp_idxs: list | None = None) -> itertools.chain:
+        """Return ordered chain object of the specified omega_d and amplitude values."""
+        if amp_idxs is None:
+            amp_range_vals = self.drive_amplitudes
+        else:
+            amp_range_vals = self.drive_amplitudes[amp_idxs[0]: amp_idxs[1]]
+        _omega_d_amp_params = [
+            product([omega_d], amp_vals)
+            for omega_d, amp_vals in zip(
+                self.omega_d_values, amp_range_vals.T, strict=False
+            )
+        ]
+        return chain(*_omega_d_amp_params)
 
 
 class FloquetAnalysis:
@@ -99,17 +140,15 @@ class FloquetAnalysis:
         self,
         H0: qt.Qobj,
         H1: qt.Qobj,
+        drive_parameters: DriveParameters,
         state_indices: list,
-        omega_d_linspace: np.ndarray,
-        amp_linspace: np.ndarray,
         options: Options,
         init_data_to_save: dict | None = None,
     ):
         self.H0 = H0
         self.H1 = H1
+        self.drive_parameters = drive_parameters
         self.state_indices = state_indices
-        self.omega_d_linspace = omega_d_linspace
-        self.amp_linspace = amp_linspace
         self.options = options
         self.init_data_to_save = init_data_to_save
         # Save in _init_attrs for later re-initialization. Everything added to self
@@ -117,13 +156,9 @@ class FloquetAnalysis:
         self._init_attrs = set(self.__dict__.keys())
         self.num_states = H0.shape[0]
         self.exponent_pair_idx_map = self._create_exponent_pair_idx_map()
-        self._num_fit_ranges = int(np.ceil(1 / options.fit_range_fraction))
-        self._num_amp_pts_per_range = int(
-            np.floor(len(self.amp_linspace) / self._num_fit_ranges)
-        )
         array_shape = (
-            len(self.omega_d_linspace),
-            len(self.amp_linspace),
+            len(self.drive_parameters.omega_d_values),
+            len(self.drive_parameters.drive_amplitudes),
             len(self.state_indices),
         )
         self.max_overlap_data = np.zeros(array_shape)
@@ -141,7 +176,11 @@ class FloquetAnalysis:
             (*array_shape, self.num_states), dtype=complex
         )
         self.avg_excitation = np.zeros(
-            (len(self.omega_d_linspace), len(self.amp_linspace), self.num_states)
+            (
+                len(self.drive_parameters.omega_d_values),
+                len(self.drive_parameters.drive_amplitudes),
+                self.num_states,
+            )
         )
         self.all_quasienergies = np.zeros_like(self.avg_excitation)
 
@@ -155,7 +194,12 @@ class FloquetAnalysis:
             elif isinstance(v, np.ndarray):
                 new_init_dict[k] = v.tolist()
             elif isinstance(v, Options):
-                new_init_dict['options'] = vars(v)
+                new_init_dict[k] = vars(v)
+            elif isinstance(v, DriveParameters):
+                dp_dict = {}
+                for dp_key, dp_val in vars(v).items():
+                    dp_dict[dp_key] = dp_val.tolist()
+                new_init_dict[k] = dp_dict
             else:
                 new_init_dict[k] = v
         return new_init_dict
@@ -164,14 +208,11 @@ class FloquetAnalysis:
         """Collect all attributes for writing to file, including derived ones."""
         if self.init_data_to_save is None:
             self.init_data_to_save = {}
-        param_dict = vars(self.options) | self.init_data_to_save
+        param_dict = (
+            vars(self.options) | vars(self.drive_parameters) | self.init_data_to_save
+        )
         return param_dict | {
-            'state_indices': self.state_indices,
-            'omega_d_linspace': self.omega_d_linspace,
-            'amp_linspace': self.amp_linspace,
             'num_states': self.num_states,
-            'num_fit_ranges': self._num_fit_ranges,
-            'num_amp_pts_per_range': self._num_amp_pts_per_range,
             'exp_pair_map': self.exponent_pair_idx_map,
             'floquet_analysis_init': self.get_initdata(),
         }
@@ -335,7 +376,9 @@ class FloquetAnalysis:
         omega_d, amp = omega_d_amp
         for array_idx, state_idx in enumerate(self.state_indices):
             floquet_data = self.floquet_mode_data[
-                self.omega_d_to_idx(omega_d), self.amp_to_idx(amp, omega_d), array_idx
+                self.drive_parameters.omega_d_to_idx(omega_d),
+                self.drive_parameters.amp_to_idx(amp, omega_d),
+                array_idx,
             ]
             disp_state = self.displaced_state(
                 omega_d, amp, disp_coeffs_for_new_amp[array_idx], state_idx=state_idx
@@ -380,7 +423,8 @@ class FloquetAnalysis:
         # coefficients, whereas for the Blais calculation, the bare modes are specified
         # as actual kets.
         prev_f_modes_arr = np.tile(
-            self.bare_state_array()[None, :, :], (len(self.omega_d_linspace), 1, 1)
+            self.bare_state_array()[None, :, :],
+            (len(self.drive_parameters.omega_d_values), 1, 1),
         )
         disp_coeffs_for_prev_amp = np.array(
             [
@@ -388,15 +432,19 @@ class FloquetAnalysis:
                 for state_idx in self.state_indices
             ]
         )
-        for amp_range_idx in range(self._num_fit_ranges):
+        num_fit_ranges = int(np.ceil(1 / self.options.fit_range_fraction))
+        num_amp_pts_per_range = int(
+            np.floor(len(self.drive_parameters.drive_amplitudes) / num_fit_ranges)
+        )
+        for amp_range_idx in range(num_fit_ranges):
             print(f'calculating for amp_range_idx={amp_range_idx}')
             # edge case if range doesn't fit in neatly
-            if amp_range_idx == self._num_fit_ranges - 1:
-                amp_range_idx_final = len(self.amp_linspace)
+            if amp_range_idx == num_fit_ranges - 1:
+                amp_range_idx_final = len(self.drive_parameters.drive_amplitudes)
             else:
-                amp_range_idx_final = (amp_range_idx + 1) * self._num_amp_pts_per_range
+                amp_range_idx_final = (amp_range_idx + 1) * num_amp_pts_per_range
             amp_idxs = [
-                amp_range_idx * self._num_amp_pts_per_range,
+                amp_range_idx * num_amp_pts_per_range,
                 amp_range_idx_final,
             ]
             # now perform floquet mode calculation for amp_range_idx
@@ -414,7 +462,7 @@ class FloquetAnalysis:
             )
             # save the extracted overlaps for later use when fitting over the whole
             # shebang
-            self._displaced_state_overlaps[:, amp_idxs[0] : amp_idxs[1], :] = overlaps
+            self._displaced_state_overlaps[:, amp_idxs[0]: amp_idxs[1], :] = overlaps
             update_data_in_h5(filepath, self.assemble_data_dict())
         # the previously extracted coefficients were valid for the amplitude ranges
         # we asked for the fit over. Now armed with with correctly identified floquet
@@ -426,7 +474,7 @@ class FloquetAnalysis:
         # just e.g. overwrite self.coefficient_matrix
         self.coefficient_matrix[:, :, :] = full_displaced_fit
         true_overlaps = self._overlap_with_displaced_states(
-            [0, len(self.amp_linspace)], full_displaced_fit
+            [0, len(self.drive_parameters.drive_amplitudes)], full_displaced_fit
         )
         self.displaced_state_overlaps[:, :, :] = true_overlaps
         print(f'finished in {(time.time() - start_time) / 60} minutes')
@@ -439,12 +487,14 @@ class FloquetAnalysis:
         prev_f_modes_arr: np.ndarray,
     ) -> np.ndarray:
         """Run the floquet simulation over a specific amplitude range."""
-        amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
+        amp_range_vals = self.drive_parameters.drive_amplitudes[
+            amp_idxs[0]: amp_idxs[1]
+        ]
 
         def _run_floquet_and_calculate(
             omega_d: float,
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-            omega_d_idx = self.omega_d_to_idx(omega_d)
+            omega_d_idx = self.drive_parameters.omega_d_to_idx(omega_d)
             amps_for_omega_d = amp_range_vals[:, omega_d_idx]
             avg_excitation_arr = np.zeros((len(amps_for_omega_d), self.num_states))
             quasienergies_arr = np.zeros_like(avg_excitation_arr)
@@ -478,7 +528,9 @@ class FloquetAnalysis:
 
         floquet_data = list(
             parallel_map(
-                self.options.num_cpus, _run_floquet_and_calculate, self.omega_d_linspace
+                self.options.num_cpus,
+                _run_floquet_and_calculate,
+                self.drive_parameters.omega_d_values,
             )
         )
         (
@@ -489,48 +541,50 @@ class FloquetAnalysis:
         ) = list(zip(*floquet_data, strict=False))
         floquet_mode_array = np.array(all_modes_quasies_ovlps, dtype=complex).reshape(
             (
-                len(self.omega_d_linspace),
+                len(self.drive_parameters.omega_d_values),
                 len(amp_range_vals),
                 len(self.state_indices),
                 3 + self.num_states,
             )
         )
         f_modes_last_amp = np.array(f_modes_last_amp, dtype=complex).reshape(
-            (len(self.omega_d_linspace), self.num_states, self.num_states)
+            (
+                len(self.drive_parameters.omega_d_values),
+                self.num_states,
+                self.num_states,
+            )
         )
-        self.max_overlap_data[:, amp_idxs[0] : amp_idxs[1]] = np.real(
+        self.max_overlap_data[:, amp_idxs[0]: amp_idxs[1]] = np.real(
             floquet_mode_array[..., 0]
         )
-        self.floquet_mode_idxs[:, amp_idxs[0] : amp_idxs[1]] = np.real(
+        self.floquet_mode_idxs[:, amp_idxs[0]: amp_idxs[1]] = np.real(
             floquet_mode_array[..., 1]
         )
-        self.quasienergies[:, amp_idxs[0] : amp_idxs[1]] = np.real(
+        self.quasienergies[:, amp_idxs[0]: amp_idxs[1]] = np.real(
             floquet_mode_array[..., 2]
         )
-        self.floquet_mode_data[:, amp_idxs[0] : amp_idxs[1]] = floquet_mode_array[
+        self.floquet_mode_data[:, amp_idxs[0]: amp_idxs[1]] = floquet_mode_array[
             ..., 3:
         ]
-        self.avg_excitation[:, amp_idxs[0] : amp_idxs[1]] = np.array(
+        self.avg_excitation[:, amp_idxs[0]: amp_idxs[1]] = np.array(
             all_avg_excitation
-        ).reshape((len(self.omega_d_linspace), len(amp_range_vals), self.num_states))
-        self.all_quasienergies[:, amp_idxs[0] : amp_idxs[1]] = np.array(
-            all_quasienergies
-        ).reshape((len(self.omega_d_linspace), len(amp_range_vals), self.num_states))
-        return f_modes_last_amp
-
-    def _omega_d_amp_params(self, amp_idxs: list | None = None) -> itertools.chain:
-        """Return ordered chain object of the specified omega_d and amplitude values."""
-        if amp_idxs is None:
-            amp_range_vals = self.amp_linspace
-        else:
-            amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
-        _omega_d_amp_params = [
-            product([omega_d], amp_vals)
-            for omega_d, amp_vals in zip(
-                self.omega_d_linspace, amp_range_vals.T, strict=False
+        ).reshape(
+            (
+                len(self.drive_parameters.omega_d_values),
+                len(amp_range_vals),
+                self.num_states,
             )
-        ]
-        return chain(*_omega_d_amp_params)
+        )
+        self.all_quasienergies[:, amp_idxs[0]: amp_idxs[1]] = np.array(
+            all_quasienergies
+        ).reshape(
+            (
+                len(self.drive_parameters.omega_d_values),
+                len(amp_range_vals),
+                self.num_states,
+            )
+        )
+        return f_modes_last_amp
 
     def _overlap_with_displaced_states(
         self, amp_idxs: list, disp_coeffs_for_new_amp: np.ndarray
@@ -545,15 +599,21 @@ class FloquetAnalysis:
                 omega_d_amp, disp_coeffs_for_new_amp
             )
 
-        omega_d_amp_params = self._omega_d_amp_params(amp_idxs)
-        amp_range_vals = self.amp_linspace[amp_idxs[0] : amp_idxs[1]]
+        omega_d_amp_params = self.drive_parameters.omega_d_amp_params(amp_idxs)
+        amp_range_vals = self.drive_parameters.drive_amplitudes[
+            amp_idxs[0]: amp_idxs[1]
+        ]
         result = list(
             parallel_map(
                 self.options.num_cpus, run_overlap_displaced, omega_d_amp_params
             )
         )
         return np.array(result).reshape(
-            (len(self.omega_d_linspace), len(amp_range_vals), len(self.state_indices))
+            (
+                len(self.drive_parameters.omega_d_values),
+                len(amp_range_vals),
+                len(self.state_indices),
+            )
         )
 
     def _displaced_states_fit(
@@ -629,7 +689,7 @@ class FloquetAnalysis:
             floquet_idx_data = self.floquet_mode_data[:, :, array_idx, :]
         else:
             floquet_idx_data = self.floquet_mode_data[
-                :, amp_idxs[0] : amp_idxs[1], array_idx, :
+                :, amp_idxs[0]: amp_idxs[1], array_idx, :
             ]
         if disp_coeffs_for_prev_amp is None:
             # this means we are on the final lap, and want to compare with previously
@@ -638,16 +698,19 @@ class FloquetAnalysis:
         else:
 
             def _compute_bare_state(omega_d: float) -> np.ndarray:
-                omega_d_idx = self.omega_d_to_idx(omega_d)
+                omega_d_idx = self.drive_parameters.omega_d_to_idx(omega_d)
                 return self.displaced_state(
                     omega_d,
-                    self.amp_linspace[amp_idxs[0], omega_d_idx],
+                    self.drive_parameters.drive_amplitudes[amp_idxs[0], omega_d_idx],
                     disp_coeffs_for_prev_amp[array_idx],
                     state_idx,
                 ).full()[:, 0]
 
             bare_states = np.array(
-                [_compute_bare_state(omega_d) for omega_d in self.omega_d_linspace],
+                [
+                    _compute_bare_state(omega_d)
+                    for omega_d in self.drive_parameters.omega_d_values
+                ],
                 dtype=complex,
             )
             # bare states may differ as a function of omega_d, hence the bare states
@@ -657,7 +720,9 @@ class FloquetAnalysis:
             ovlp_with_bare_state = np.abs(
                 np.einsum('ijk,ik->ij', floquet_idx_data, np.conj(bare_states))
             )
-        omega_d_amp_data_slice = list(self._omega_d_amp_params(amp_idxs))
+        omega_d_amp_data_slice = list(
+            self.drive_parameters.omega_d_amp_params(amp_idxs)
+        )
         omega_d_amp_filtered = self._ravel_and_filter_params(
             ovlp_with_bare_state, omega_d_amp_data_slice
         )
@@ -718,8 +783,8 @@ class FloquetAnalysis:
 
     def floquet_mode(self, omega_d: float, amp: float, array_idx: int) -> np.ndarray:
         """Helper function for extracting the floquet mode."""
-        omega_d_idx = self.omega_d_to_idx(omega_d)
-        amp_idx = self.amp_to_idx(amp, omega_d)
+        omega_d_idx = self.drive_parameters.omega_d_to_idx(omega_d)
+        amp_idx = self.drive_parameters.amp_to_idx(amp, omega_d)
         return self.floquet_mode_data[omega_d_idx, amp_idx, array_idx]
 
     def _fit_params(
@@ -743,8 +808,12 @@ class FloquetAnalysis:
         but the fit is nominally set to order four. We additionally eliminate the
         constant term that should always be either zero or one.
         """
-        cutoff_omega_d = min(len(self.omega_d_linspace), self.options.fit_cutoff)
-        cutoff_amp = min(len(self.amp_linspace), self.options.fit_cutoff)
+        cutoff_omega_d = min(
+            len(self.drive_parameters.omega_d_values), self.options.fit_cutoff
+        )
+        cutoff_amp = min(
+            len(self.drive_parameters.drive_amplitudes), self.options.fit_cutoff
+        )
         idx_exp_map = [
             (idx_1, idx_2)
             for idx_1 in range(cutoff_omega_d)
@@ -792,14 +861,3 @@ class FloquetAnalysis:
             * qt.basis(self.num_states, state_idx_component)
             for state_idx_component in range(self.num_states)
         ).unit()
-
-    def amp_to_range_idx(self, amp: float, omega_d: float) -> int:
-        amp_idx = self.amp_to_idx(amp, omega_d)
-        return int(np.floor(amp_idx / self._num_amp_pts_per_range))
-
-    def omega_d_to_idx(self, omega_d: float) -> np.ndarray[int]:
-        return np.argmin(np.abs(self.omega_d_linspace - omega_d))
-
-    def amp_to_idx(self, amp: float, omega_d: float) -> np.ndarray[int]:
-        omega_d_idx = self.omega_d_to_idx(omega_d)
-        return np.argmin(np.abs(self.amp_linspace[:, omega_d_idx] - amp))
