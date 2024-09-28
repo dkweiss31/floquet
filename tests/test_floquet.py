@@ -11,7 +11,8 @@ from floquet import (
     XiSqToAmp,
     floquet_analysis,
     floquet_analysis_from_file,
-    DriveParameters
+    DriveParameters,
+    DisplacedState
 )
 
 
@@ -23,7 +24,7 @@ def _filepath(path):
 
 @pytest.fixture(scope='session', autouse=True)
 def setup_floquet():
-    num_states = 20
+    num_states = 19
     EJ = 29.0
     EC = 0.155
     ng = 0.0
@@ -40,7 +41,7 @@ def setup_floquet():
     H0 = 2.0 * np.pi * qt.Qobj(np.diag(evals - evals[0]))
     H1 = hilbert_space.op_in_dressed_eigenbasis(tmon.n_operator)
 
-    options = Options(fit_range_fraction=0.5, num_cpus=6)
+    options = Options(fit_range_fraction=0.5, num_cpus=1)
     chi_to_amp = ChiacToAmp(H0, H1, state_indices, omega_d_values)
     drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
     drive_parameters = DriveParameters(omega_d_values, drive_amplitudes)
@@ -76,7 +77,7 @@ def test_chi_vs_xi(setup_floquet):
 def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
     floquet_transmon, chi_to_amp, _ = setup_floquet
     filepath = _filepath(tmp_path)
-    floquet_transmon.run(filepath=filepath)
+    data_dict = floquet_transmon.run(filepath=filepath)
     # for these random pairs, overlap should be near unity (most
     # pairs don't correspond to a resonance!)
     omega_d_vals = 2.0 * np.pi * np.array([7.5, 9.0, 11.8, 12.7])
@@ -85,17 +86,23 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
     for omega_d, chi_ac in omega_d_chi_ac:
         omega_d_idx = floquet_transmon.drive_parameters.omega_d_to_idx(omega_d)
         amp = chi_to_amp.amplitudes_for_omega_d(chi_ac)[0, omega_d_idx]
-        for arr_idx, state_idx in enumerate(floquet_transmon.state_indices):
-            disp_coeffs = floquet_transmon.coefficient_matrix
-            disp_gs = floquet_transmon.displaced_state(
-                omega_d, amp, disp_coeffs[arr_idx], state_idx=state_idx
+        for array_idx, state_idx in enumerate(floquet_transmon.state_indices):
+            disp_coeffs = data_dict['fit_data']
+            displaced_state = DisplacedState(
+                floquet_transmon.hilbert_dim,
+                floquet_transmon.drive_parameters,
+                floquet_transmon.state_indices,
+                floquet_transmon.options,
+            )
+            disp_gs = displaced_state.displaced_state(
+                omega_d, amp, state_idx=state_idx, coefficients=disp_coeffs[array_idx]
             )
             f_modes_energies = floquet_transmon.run_one_floquet((omega_d, amp))
             floquet_mode = floquet_transmon.calculate_modes_quasies_ovlps(
-                f_modes_energies, (omega_d, amp), disp_coeffs
+                f_modes_energies, (omega_d, amp), displaced_state, disp_coeffs
             )
             overlap = np.abs(
-                (qt.Qobj(floquet_mode[arr_idx, 3:]).dag() * disp_gs).data.toarray()[
+                (qt.Qobj(floquet_mode[array_idx, 1:]).dag() * disp_gs).data.toarray()[
                     0, 0
                 ]
             )
@@ -107,11 +114,17 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
 
 def test_displaced_bare_state(setup_floquet):
     floquet_transmon, chi_to_amp, _ = setup_floquet
+    displaced_state = DisplacedState(
+        floquet_transmon.hilbert_dim,
+        floquet_transmon.drive_parameters,
+        floquet_transmon.state_indices,
+        floquet_transmon.options,
+    )
     for state_idx in floquet_transmon.state_indices:
-        ideal_state = qt.basis(floquet_transmon.num_states, state_idx)
-        disp_coeffs_bare = floquet_transmon.bare_state_coefficients(state_idx)
+        ideal_state = qt.basis(floquet_transmon.hilbert_dim, state_idx)
+        disp_coeffs_bare = displaced_state.bare_state_coefficients(state_idx)
         # omega_d and amp values shouldn't matter
-        calc_state = floquet_transmon.displaced_state(
-            0.0, 0.0, disp_coeffs_bare, state_idx=state_idx
+        calc_state = displaced_state.displaced_state(
+            0.0, 0.0, state_idx, disp_coeffs_bare
         )
         assert calc_state == ideal_state
