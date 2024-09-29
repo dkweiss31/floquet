@@ -28,7 +28,7 @@ class Options:
     num_cpus: int
         number of cpus to use in parallel computation of Floquet modes over the
         different values of omega_d, amp. Defaults to 1.
-    save_floquet_mode_data: bool
+    save_floquet_modes: bool
         Indicating whether to save the extracted Floquet modes themselves. Such data is
         often unnecessary and requires a fair amount of storage, so the default is
         False.
@@ -42,7 +42,7 @@ class Options:
         overlap_cutoff: float = 0.8,
         nsteps: int = 30_000,
         num_cpus: int = 1,
-        save_floquet_mode_data: bool = False,
+        save_floquet_modes: bool = False,
     ):
         self.fit_range_fraction = fit_range_fraction
         self.floquet_sampling_time_fraction = floquet_sampling_time_fraction
@@ -50,4 +50,4 @@ class Options:
         self.overlap_cutoff = overlap_cutoff
         self.nsteps = nsteps
         self.num_cpus = num_cpus
-        self.save_floquet_mode_data = save_floquet_mode_data
+        self.save_floquet_modes = save_floquet_modes
