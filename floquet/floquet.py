@@ -509,7 +509,7 @@ class FloquetAnalysis:
             all_avg_excitation,
             all_quasienergies,
             f_modes_last_amp,
-        ) = list(zip(*floquet_data, strict=False))
+        ) = list(zip(*floquet_data, strict=True))
         floquet_mode_array = np.array(all_modes_quasies_ovlps, dtype=complex).reshape(
             (
                 len(self.drive_parameters.omega_d_values),
