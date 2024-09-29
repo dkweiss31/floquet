@@ -219,8 +219,8 @@ class DisplacedState:
         Parameters:
             amp_idxs: list of lower and upper amplitude indices specifying the range of
                 drive amplitudes this calculation should be done for
-            coefficients: coefficients that specify the displaced state that we calculate
-                overlaps of Floquet modes against
+            coefficients: coefficients that specify the displaced state that we
+                calculate overlaps of Floquet modes against
             floquet_data: Floquet data to be compared to the displaced states given by
                 coefficients
         Returns:
