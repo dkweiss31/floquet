@@ -76,6 +76,13 @@ def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
 
 
 class FloquetAnalysis:
+    """Class containing methods for performing full Floquet analysis.
+
+    This class should be instantiated by calling the function floquet_analysis().
+    In most workflows, one needs only then to call then run() method which performs
+    both the displaced state fit and the Blais branch analysis. For an example
+    workflow, see the [transmon](../examples/transmon) tutorial.
+    """
     def __init__(
         self,
         H0: qt.Qobj,

@@ -8,9 +8,27 @@ The **floquet** Python API consists largely of the **floquet_analysis** function
     options:
         show_source: false
 
+## Displaced state
+
+::: floquet.displaced_state
+    options:
+        show_source: false
+
+## Drive parameters
+
+::: floquet.drive_parameters
+    options:
+        show_source: false
+
 ## Amplitude conversion utilities
 
 ::: floquet.amplitude_converters
+    options:
+        show_source: false
+
+## Options
+
+::: floquet.options
     options:
         show_source: false
 
