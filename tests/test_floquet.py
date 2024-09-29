@@ -9,10 +9,10 @@ from floquet import (
     ChiacToAmp,
     DisplacedState,
     DriveParameters,
-    Options,
-    XiSqToAmp,
     floquet_analysis,
     floquet_analysis_from_file,
+    Options,
+    XiSqToAmp,
 )
 
 
@@ -113,7 +113,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
 
 
 def test_displaced_bare_state(setup_floquet):
-    floquet_transmon, chi_to_amp, _ = setup_floquet
+    floquet_transmon, _, _ = setup_floquet
     displaced_state = DisplacedState(
         floquet_transmon.hilbert_dim,
         floquet_transmon.drive_parameters,

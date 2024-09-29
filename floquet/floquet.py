@@ -120,7 +120,7 @@ class DriveParameters:
 
     def omega_d_amp_params(self, amp_idxs: list) -> itertools.chain:
         """Return ordered chain object of the specified omega_d and amplitude values."""
-        amp_range_vals = self.drive_amplitudes[amp_idxs[0]: amp_idxs[1]]
+        amp_range_vals = self.drive_amplitudes[amp_idxs[0] : amp_idxs[1]]
         _omega_d_amp_params = [
             product([omega_d], amp_vals)
             for omega_d, amp_vals in zip(
@@ -177,7 +177,7 @@ class DisplacedState:
             overlaps[:, :, array_idx] = np.abs(
                 np.einsum(
                     'ijk,ik->ij',
-                    floquet_data[:, amp_idxs[0]: amp_idxs[1], array_idx],
+                    floquet_data[:, amp_idxs[0] : amp_idxs[1], array_idx],
                     np.conj(bare_states),
                 )
             )
@@ -322,14 +322,14 @@ class DisplacedStateFit(DisplacedState):
         def _fit_for_state_idx(array_state_idx: tuple[int, int]) -> np.ndarray:
             # For the bare state, we look at the amplitude at the leading edge of the
             # window (that is, the smallest amplitude). This is the most natural choice,
-            # as it is most analogous to what is done in the first window when the overlap
-            # is computed against bare eigenstates (that obviously don't have amplitude
-            # dependence). Moreover, the fit coefficients for the previous window by
-            # definition were obtained in a window that does not include the one we are
-            # currently investigating. Asking for the state for amplitude values outside of
-            # the fit window should be done at your own peril.
+            # as it is most analogous to what is done in the first window when the
+            # overlap is computed against bare eigenstates (that obviously don't have
+            # amplitude dependence). Moreover, the fit coefficients for the previous
+            # window by definition were obtained in a window that does not include the
+            # one we are currently investigating. Asking for the state for amplitude
+            # values outside of the fit window should be done at your own peril.
             array_idx, state_idx = array_state_idx
-            floquet_idx_data = floquet_data[:, amp_idxs[0]: amp_idxs[1], array_idx, :]
+            floquet_idx_data = floquet_data[:, amp_idxs[0] : amp_idxs[1], array_idx, :]
             mask = ovlp_with_bare_states[:, :, array_idx].ravel()
             omega_d_amp_data_slice = list(
                 self.drive_parameters.omega_d_amp_params(amp_idxs)
@@ -410,7 +410,7 @@ class DisplacedStateFit(DisplacedState):
     ) -> np.ndarray:
         poly_fit = functools.partial(self._coefficient_for_state, bare_same=bare_same)
         try:
-            popt, pcov = sp.optimize.curve_fit(poly_fit, XYdata, Zdata, p0=p0)
+            popt, _ = sp.optimize.curve_fit(poly_fit, XYdata, Zdata, p0=p0)
         except RuntimeError:
             warnings.warn(
                 'fit failed for a bare component, returning zeros for the fit',
@@ -497,7 +497,7 @@ class FloquetAnalysis:
         params: tuple
             pair of drive frequency and amp
         """
-        omega_d, amp = params
+        omega_d, _ = params
         T = 2.0 * np.pi / omega_d
         f_modes_0, f_energies_0 = qt.floquet_modes(
             self.hamiltonian(params),  # type: ignore
@@ -536,7 +536,7 @@ class FloquetAnalysis:
         disp_coeffs: ndarray
             matrix of coefficients for the displaced state
         """
-        f_modes_0, f_energies_0 = f_modes_energies
+        f_modes_0, _ = f_modes_energies
         # construct column vectors to compute overlaps
         f_modes_cols = np.array(
             [f_modes_0[idx].data.toarray()[:, 0] for idx in range(self.hilbert_dim)],
@@ -771,7 +771,7 @@ class FloquetAnalysis:
 
     @staticmethod
     def _place_into(amp_idxs, array_for_range, overall_array):
-        overall_array[:, amp_idxs[0]: amp_idxs[1]] = array_for_range
+        overall_array[:, amp_idxs[0] : amp_idxs[1]] = array_for_range
         return overall_array
 
     def _floquet_main_for_amp_range(
@@ -783,7 +783,7 @@ class FloquetAnalysis:
     ) -> tuple:
         """Run the floquet simulation over a specific amplitude range."""
         amp_range_vals = self.drive_parameters.drive_amplitudes[
-            amp_idxs[0]: amp_idxs[1]
+            amp_idxs[0] : amp_idxs[1]
         ]
 
         def _run_floquet_and_calculate(

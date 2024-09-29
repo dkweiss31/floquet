@@ -53,35 +53,20 @@ docstring-code-format = true
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
-select = [
-    "F", "E", "W", "C90", "I", "D", "UP", "YTT", "ANN", "BLE", "B", "A", "C4", "FA",
-    "INP", "NPY201", "PIE", "T20", "PYI", "PT", "RSE", "RET", "SLF", "SIM", "INT",
-    "ARG", "PTH", "PL", "TRY", "FLY", "NPY", "RUF",
-]
-extend-select = ["D204", "D400", "D404", "D406", "D410"]
-ignore = [
-    "E741",
-    "C901",
-    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D417",
-    "ANN101", "ANN003",
-    "TRY003",
-    "PLR2004", "PLR0912", "PLR0913",
-    "T201"
-]
+fixable = ["I001", "F401"]
+select = ["E", "F", "I001"]
 
 [tool.ruff.lint.isort]
+combine-as-imports = true
 split-on-trailing-comma = false
+lines-after-imports = 2
+order-by-type = false
 
 [tool.ruff.lint.flake8-annotations]
 suppress-none-returning = true
 
 [tool.ruff.lint.flake8-comprehensions]
 allow-dict-calls-with-keyword-arguments = true
-
-[tool.ruff.lint.per-file-ignores]
-"__init__.py" = ["F401", "PLC0414"]
-"tests/**.py" = ["ANN"]
-"examples/**.py" = ["INP001"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
