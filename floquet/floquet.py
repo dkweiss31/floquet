@@ -24,10 +24,14 @@ def floquet_analysis(
     """Perform a floquet analysis to identify nonlinear resonances.
 
     Arguments:
-        H0: Drift Hamiltonian (ideally diagonal)
-        H1: Drive operator
+        H0: Drift Hamiltonian, which must be diagonal and provided in units such that
+            H0 can be passed directly to qutip.
+        H1: Drive operator, which should be unitless (for instance the charge-number
+            operator n of the transmon). It will be multiplied by a drive amplitude
+            that we scan over from drive_parameters.drive_amplitudes.
         drive_parameters: Class specifying the drive amplitudes and frequencies
-        state_indices: State indices of interest
+        state_indices: State indices of interest. Defaults to [0, 1], indicating the two
+            lowest-energy states.
         options: Options for the Floquet analysis.
         init_data_to_save: Initial parameter metadata to save to file. Defaults to None.
 
@@ -180,14 +184,16 @@ class FloquetAnalysis:
             f_modes_t = f_modes_0
         return f_modes_t, f_energies_0
 
-    def calculate_modes_quasies_ovlps(
+    def identify_floquet_modes(
         self,
         f_modes_energies: tuple[np.ndarray, qt.Qobj],
         params_0: tuple[float, float],
         displaced_state: DisplacedState,
         previous_coefficients: np.ndarray,
     ) -> np.ndarray:
-        """Return overlaps with "ideal" bare state at a given pair of (omega_d, amp).
+        """Return floquet modes with largest overlap with ideal displaced state.
+
+        Also return that overlap value.
 
         Parameters:
             f_modes_energies: output of self.run_one_floquet(params)
@@ -205,7 +211,7 @@ class FloquetAnalysis:
             dtype=complex,
         ).T
         # return overlap and floquet mode
-        modes_quasies_ovlps = np.zeros(
+        ovlps_and_modes = np.zeros(
             (len(self.state_indices), 1 + self.hilbert_dim), dtype=complex
         )
         # TODO: refactor using overlap_with_bare_states method?
@@ -225,11 +231,11 @@ class FloquetAnalysis:
         for array_idx, _state_idx in enumerate(self.state_indices):
             f_idx = f_idxs[array_idx]
             bare_state_overlap = overlaps[array_idx, f_idx]
-            modes_quasies_ovlps[array_idx, 0] = bare_state_overlap
-            modes_quasies_ovlps[array_idx, 1:] = (
+            ovlps_and_modes[array_idx, 0] = bare_state_overlap
+            ovlps_and_modes[array_idx, 1:] = (
                 np.sign(bare_state_overlap) * f_modes_cols[:, f_idx]
             )
-        return modes_quasies_ovlps
+        return ovlps_and_modes
 
     def bare_state_array(self) -> np.ndarray:
         """Return array of bare states.
@@ -259,8 +265,7 @@ class FloquetAnalysis:
         max_idxs = np.argmax(all_overlaps, axis=1)
         f_modes_ordered = f_modes_0[max_idxs]
         avg_excitation = self._calculate_mean_excitation(f_modes_ordered)
-        sorted_quasi_es = f_energies_0[max_idxs]
-        return avg_excitation, sorted_quasi_es, f_modes_ordered
+        return avg_excitation, f_energies_0[max_idxs], f_modes_ordered
 
     def _calculate_mean_excitation(self, f_modes_ordered: np.ndarray) -> np.ndarray:
         """Mean excitation number of ordered floquet modes.
@@ -409,22 +414,20 @@ class FloquetAnalysis:
                 amp_idxs, overlaps, intermediate_displaced_state_overlaps
             )
             previous_coefficients = new_coefficients
-        # the previously extracted coefficients were valid for the amplitude ranges
+        # The previously extracted coefficients were valid for the amplitude ranges
         # we asked for the fit over. Now armed with with correctly identified floquet
         # modes, we recompute these coefficients over the whole sea of floquet mode data
         # to get a plot that is free from numerical artifacts associated with
-        # the fits being slightly different at the boundary of ranges
+        # the fits being slightly different at the boundary of ranges. We utilize the
+        # previously computed overlaps of the floquet modes with the displaced states
+        # (stored in intermediate_displaced_state_overlaps) to obtain the mask with
+        # which we exclude some data from the fit (because we suspect they've hit
+        # resonances).
         amp_idxs = [0, len(self.drive_parameters.drive_amplitudes)]
-        # In this case we utilize the previously computed overlaps of the floquet modes
-        # with the displaced states (stored in intermediate_displaced_state_overlaps)
-        # to obtain the mask with which we exclude some data from the fit (because we
-        # suspect they've hit resonances).
         omega_d_amp_slice = list(self.drive_parameters.omega_d_amp_params(amp_idxs))
         full_displaced_fit = displaced_state.displaced_states_fit(
             omega_d_amp_slice, intermediate_displaced_state_overlaps, floquet_modes
         )
-        # try and be a little bit of a defensive programmer here, don't
-        # just e.g. overwrite self.coefficient_matrix
         true_overlaps = displaced_state.overlap_with_displaced_states(
             amp_idxs, full_displaced_fit, floquet_modes
         )
@@ -469,7 +472,7 @@ class FloquetAnalysis:
             amps_for_omega_d = amp_range_vals[:, omega_d_idx]
             avg_excitation_arr = np.zeros((len(amps_for_omega_d), self.hilbert_dim))
             quasienergies_arr = np.zeros_like(avg_excitation_arr)
-            modes_quasies_ovlps_arr = np.zeros(
+            ovlps_and_modes_arr = np.zeros(
                 (len(amps_for_omega_d), len(self.state_indices), 1 + self.hilbert_dim),
                 dtype=complex,
             )
@@ -480,10 +483,10 @@ class FloquetAnalysis:
             for amp_idx, amp in enumerate(amps_for_omega_d):
                 params = (omega_d, amp)
                 f_modes_energies = self.run_one_floquet(params)
-                modes_quasies_ovlps = self.calculate_modes_quasies_ovlps(
+                ovlps_and_modes = self.identify_floquet_modes(
                     f_modes_energies, params_0, displaced_state, previous_coefficients
                 )
-                modes_quasies_ovlps_arr[amp_idx] = modes_quasies_ovlps
+                ovlps_and_modes_arr[amp_idx] = ovlps_and_modes
                 avg_excitation, quasi_es, new_f_modes_arr = self._step_in_amp(
                     f_modes_energies, prev_f_modes_for_omega_d
                 )
@@ -491,7 +494,7 @@ class FloquetAnalysis:
                 quasienergies_arr[amp_idx] = np.real(quasi_es)
                 prev_f_modes_for_omega_d = new_f_modes_arr
             return (
-                modes_quasies_ovlps_arr,
+                ovlps_and_modes_arr,
                 avg_excitation_arr,
                 quasienergies_arr,
                 prev_f_modes_for_omega_d,

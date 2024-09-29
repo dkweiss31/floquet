@@ -99,7 +99,7 @@ def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
                 omega_d, amp, state_idx=state_idx, coefficients=disp_coeffs[array_idx]
             )
             f_modes_energies = floquet_transmon.run_one_floquet((omega_d, amp))
-            floquet_mode = floquet_transmon.calculate_modes_quasies_ovlps(
+            floquet_mode = floquet_transmon.identify_floquet_modes(
                 f_modes_energies, (omega_d, amp), displaced_state, disp_coeffs
             )
             overlap = np.abs(
