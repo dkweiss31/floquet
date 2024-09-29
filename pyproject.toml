@@ -48,13 +48,22 @@ extend-include = ["*.ipynb"]
 exclude = ["examples/*.py", "examples/*.ipynb"]
 
 [tool.ruff.format]
-quote-style = "single"
 docstring-code-format = true
 skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
 fixable = ["I001", "F401"]
-select = ["E", "F", "I001"]
+select = ["F", "E", "W", "C90", "I", "D", "UP", "YTT", "ANN", "BLE", "B", "A", "C4", "FA",
+    "INP", "NPY201", "PIE", "T20", "PYI", "PT", "RSE", "RET", "SLF", "SIM", "INT",
+    "ARG", "PTH", "PL", "TRY", "FLY", "NPY", "RUF",
+]
+ignore = [
+    "ANN101",
+    "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D417",
+    "PLC0414",
+    "PLR0913", "PLR2004",
+    "T201",
+]
 
 [tool.ruff.lint.isort]
 combine-as-imports = true

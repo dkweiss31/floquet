@@ -28,6 +28,7 @@ class ChiacToAmp:
         self.omega_d_linspace = omega_d_linspace
 
     def amplitudes_for_omega_d(self, chi_ac_linspace: np.ndarray) -> np.ndarray:
+        r"""Return drive amplitudes corresponding to $\chi_{\rm ac}$ values."""
         if isinstance(chi_ac_linspace, float):
             chi_ac_linspace = np.array([chi_ac_linspace])
         chis_for_omega_d = self.compute_chis_for_omega_d()
@@ -35,7 +36,7 @@ class ChiacToAmp:
         # 2 pi GHz, while H1 is unitless. Thus chis_for_omega_d has units of
         # 1/(2 pi GHz) so the below has units of 2 pi GHz as required.
         return np.einsum(
-            'a,w->aw', 2.0 * np.sqrt(chi_ac_linspace), 1.0 / np.sqrt(chis_for_omega_d)
+            "a,w->aw", 2.0 * np.sqrt(chi_ac_linspace), 1.0 / np.sqrt(chis_for_omega_d)
         )
 
     def compute_chis_for_omega_d(self) -> np.ndarray:
@@ -97,6 +98,7 @@ class XiSqToAmp:
         self.omega_d_linspace = omega_d_linspace
 
     def amplitudes_for_omega_d(self, xi_sq_linspace: np.ndarray) -> np.ndarray:
+        r"""Return drive amplitudes corresponding to $|\xi|^2$ values."""
         if isinstance(xi_sq_linspace, float):
             xi_sq_linspace = np.array([xi_sq_linspace])
         idx_0 = self.state_indices[0]
@@ -104,7 +106,7 @@ class XiSqToAmp:
         drive_matelem = self.H1[idx_0, idx_1]
         omega_01 = self.H0[idx_1, idx_1] - self.H0[idx_0, idx_0]
         return np.einsum(
-            'x,w->xw',
+            "x,w->xw",
             np.sqrt(xi_sq_linspace) / np.abs(drive_matelem),
             np.abs(omega_01**2 - self.omega_d_linspace**2)
             / (2 * self.omega_d_linspace),

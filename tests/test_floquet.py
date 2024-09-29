@@ -1,4 +1,5 @@
 import itertools
+import pathlib
 
 import numpy as np
 import pytest
@@ -16,20 +17,20 @@ from floquet import (
 )
 
 
-def _filepath(path):
-    d = path / 'sub'
+def _filepath(path: pathlib.Path) -> pathlib.Path:
+    d = path / "sub"
     d.mkdir()
-    return d / 'tmp.h5py'
+    return d / "tmp.h5py"
 
 
-@pytest.fixture(scope='session', autouse=True)
-def setup_floquet():
+@pytest.fixture(scope="session", autouse=True)
+def setup_floquet() -> tuple:
     num_states = 19
     EJ = 29.0
     EC = 0.155
     ng = 0.0
     ncut = 21
-    INIT_DATA_TO_SAVE = {'EJ': EJ, 'EC': EC, 'ng': ng, 'ncut': ncut}
+    INIT_DATA_TO_SAVE = {"EJ": EJ, "EC": EC, "ng": ng, "ncut": ncut}
     tmon = scq.Transmon(EJ=29.0, EC=0.155, ng=0.0, ncut=21, truncated_dim=num_states)
     omega_d_values = 2.0 * np.pi * np.linspace(6.9, 13, 39)
     chi_ac_linspace = 2.0 * np.pi * np.linspace(0.0, 0.2, 40)
@@ -37,11 +38,11 @@ def setup_floquet():
 
     hilbert_space = scq.HilbertSpace([tmon])
     hilbert_space.generate_lookup()
-    evals = hilbert_space['evals'][0][0:num_states]
+    evals = hilbert_space["evals"][0][0:num_states]
     H0 = 2.0 * np.pi * qt.Qobj(np.diag(evals - evals[0]))
     H1 = hilbert_space.op_in_dressed_eigenbasis(tmon.n_operator)
 
-    options = Options(fit_range_fraction=0.5, num_cpus=1)
+    options = Options(fit_range_fraction=0.5, num_cpus=6)
     chi_to_amp = ChiacToAmp(H0, H1, state_indices, omega_d_values)
     drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
     drive_parameters = DriveParameters(omega_d_values, drive_amplitudes)
@@ -56,10 +57,10 @@ def setup_floquet():
     return floquet_transmon, chi_to_amp, chi_ac_linspace
 
 
-def test_chi_vs_xi(setup_floquet):
+def test_chi_vs_xi(setup_floquet: tuple):
     floquet_transmon, _, chi_ac_linspace = setup_floquet
     amps_from_chi_ac = floquet_transmon.drive_parameters.drive_amplitudes
-    EC = floquet_transmon.init_data_to_save['EC']
+    EC = floquet_transmon.init_data_to_save["EC"]
     xi_sq_linspace = 2.0 * chi_ac_linspace / EC / 2 / np.pi
     xi_sq_to_amp = XiSqToAmp(
         floquet_transmon.H0,
@@ -74,7 +75,7 @@ def test_chi_vs_xi(setup_floquet):
     assert np.max(rel_diff < 0.05)
 
 
-def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
+def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
     floquet_transmon, chi_to_amp, _ = setup_floquet
     filepath = _filepath(tmp_path)
     data_dict = floquet_transmon.run(filepath=filepath)
@@ -87,7 +88,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
         omega_d_idx = floquet_transmon.drive_parameters.omega_d_to_idx(omega_d)
         amp = chi_to_amp.amplitudes_for_omega_d(chi_ac)[0, omega_d_idx]
         for array_idx, state_idx in enumerate(floquet_transmon.state_indices):
-            disp_coeffs = data_dict['fit_data']
+            disp_coeffs = data_dict["fit_data"]
             displaced_state = DisplacedState(
                 floquet_transmon.hilbert_dim,
                 floquet_transmon.drive_parameters,
@@ -112,7 +113,7 @@ def test_displaced_fit_and_reinit(setup_floquet, tmp_path):
     assert reinit_floquet_transmon.get_initdata() == floquet_transmon.get_initdata()
 
 
-def test_displaced_bare_state(setup_floquet):
+def test_displaced_bare_state(setup_floquet: tuple):
     floquet_transmon, _, _ = setup_floquet
     displaced_state = DisplacedState(
         floquet_transmon.hilbert_dim,
