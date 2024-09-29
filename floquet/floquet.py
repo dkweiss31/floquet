@@ -83,6 +83,7 @@ class FloquetAnalysis:
     both the displaced state fit and the Blais branch analysis. For an example
     workflow, see the [transmon](../examples/transmon) tutorial.
     """
+
     def __init__(
         self,
         H0: qt.Qobj,
