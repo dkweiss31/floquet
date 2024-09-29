@@ -13,7 +13,7 @@ Requires Python 3.10+
 
 ## Documentation
 
-Documentation is available at [https://dkweiss.net/qontrol/](https://dkweiss.net/floquet/)
+Documentation is available at [https://dkweiss.net/floquet/](https://dkweiss.net/floquet/)
 
 ## Jump in
 

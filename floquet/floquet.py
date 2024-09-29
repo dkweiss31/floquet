@@ -658,7 +658,7 @@ class FloquetAnalysis:
         # sum over bare excitations weighted by excitation number
         return np.einsum("ik,i->k", overlaps_sq, np.arange(0, self.hilbert_dim))
 
-    def run(self, filepath: str = "tmp.h5py") -> dict:
+    def run(self, filepath: str | None = None) -> dict:
         """Perform floquet analysis over range of amplitudes and drive frequencies.
 
         This function largely performs two calculations. The first is the Xiao analysis
@@ -686,7 +686,8 @@ class FloquetAnalysis:
         state.
         """
         # Write the parameters to file and print them out
-        write_to_h5(filepath, {}, self.param_dict())
+        if filepath is not None:
+            write_to_h5(filepath, {}, self.param_dict())
         print(self)
         start_time = time.time()
 
@@ -829,7 +830,8 @@ class FloquetAnalysis:
         if self.options.save_floquet_mode_data:
             data_dict["floquet_mode_data"] = floquet_mode_data
         print(f"finished in {(time.time() - start_time) / 60} minutes")
-        update_data_in_h5(filepath, data_dict)
+        if filepath is not None:
+            update_data_in_h5(filepath, data_dict)
         return data_dict
 
     @staticmethod
