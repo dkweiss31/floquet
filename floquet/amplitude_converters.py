@@ -77,9 +77,9 @@ class ChiacToAmp:
 
 
 class XiSqToAmp:
-    r"""convert given $|\xi|^2$ value into a drive amplitude.
+    r"""Convert given $|\xi|^2$ value into a drive amplitude.
 
-    This is based on the equivalence $\xi = 2 \Omega_d \omega_d / (\omega_d^2-\omega^2),
+    This is based on the equivalence $\xi = 2 \Omega_d \omega_d / (\omega_d^2-\omega^2)$,
     where in this definition $|\xi|^2= 2 \chi_{\rm ac} / \alpha$ where $\chi_{\rm ac}$ is
     the induced ac stark shift, $\alpha$ is the anharmonicity and $\Omega_d$ is the
     drive amplitude.

@@ -27,18 +27,12 @@ def floquet_analysis(
     """Perform a floquet analysis to identify nonlinear resonances.
 
     Arguments:
-        H0: qt.Qobj | np.ndarray | list
-            Drift Hamiltonian (ideally diagonal)
-        H1: qt.Qobj | np.ndarray | list
-            drive operator
-        drive_parameters: DriveParameters
-            Class specifying the drive amplitudes and frequencies
-        state_indices: list
-            state indices of interest
-        options: Options
-            Options for the Floquet analysis.
-        init_data_to_save: dict | None
-            Initial parameter metadata to save to file. Defaults to None.
+        H0: Drift Hamiltonian (ideally diagonal)
+        H1: Drive operator
+        drive_parameters: Class specifying the drive amplitudes and frequencies
+        state_indices: State indices of interest
+        options: Options for the Floquet analysis.
+        init_data_to_save: Initial parameter metadata to save to file. Defaults to None.
 
     Returns:
         FloquetAnalysis object on which we can call run() to perform the full floquet
@@ -66,8 +60,7 @@ def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
     Here we only reinitialize the input parameters and not the computed data.
 
     Arguments:
-        filepath: str
-            Path to the file
+        filepath: Path to the file
 
     Returns:
         FloquetAnalysis object with identical initial parameters to the one previously
@@ -89,10 +82,8 @@ class DriveParameters:
     """Class that handles the drive strength and frequency.
 
     Parameters:
-        omega_d_values: ndarray | list
-            drive frequencies to scan over
-        drive_amplitudes: ndarray | list
-            amp values to scan over. Can be one dimensional in which case
+        omega_d_values: drive frequencies to scan over
+        drive_amplitudes: amp values to scan over. Can be one dimensional in which case
             these amplitudes are used for all omega_d, or it can be two dimensional
             in which case the first dimension are the amplitudes to scan over
             and the second are the amplitudes for respective drive frequencies
@@ -136,14 +127,10 @@ class DisplacedState:
     """Class providing methods for computing displaced states.
 
     Parameters:
-        hilbert_dim: int
-            Hilbert space dimension
-        drive_parameters: DriveParameters
-            Drive parameters used
-        state_indices: list
-            States of interest
-        options: Options
-            Options used
+        hilbert_dim: Hilbert space dimension
+        drive_parameters: Drive parameters used
+        state_indices: States of interest
+        options: Options used
     """
 
     def __init__(
@@ -178,13 +165,10 @@ class DisplacedState:
         own peril.
 
         Parameters:
-            amp_idx_0: int
-                Index specifying the lower bound of the amplitude range.
-            coefficients: np.ndarray
-                coefficients that specify the bare state that we calculate
+            amp_idx_0: Index specifying the lower bound of the amplitude range.
+            coefficients: coefficients that specify the bare state that we calculate
                 overlaps of Floquet modes against
-            floquet_data: np.ndarray
-                Floquet data to be compared to the bare states given by
+            floquet_data: Floquet data to be compared to the bare states given by
                 coefficients
         Returns:
             overlaps with shape (w,a,s) where w is the number of drive frequencies,
@@ -233,14 +217,11 @@ class DisplacedState:
         This is done here for a specific amplitude range.
 
         Parameters:
-            amp_idxs: list
-                list of lower and upper amplitude indices specifying the range of
+            amp_idxs: list of lower and upper amplitude indices specifying the range of
                 drive amplitudes this calculation should be done for
-            coefficients: np.ndarray
-                coefficients that specify the displaced state that we calculate
+            coefficients: coefficients that specify the displaced state that we calculate
                 overlaps of Floquet modes against
-            floquet_data: np.ndarray
-                Floquet data to be compared to the displaced states given by
+            floquet_data: Floquet data to be compared to the displaced states given by
                 coefficients
         Returns:
             overlaps with shape (w,a,s) where w is the number of drive frequencies,
@@ -289,13 +270,12 @@ class DisplacedState:
         r"""For bare state only component is itself.
 
         Parameters:
-            state_idx: int
-                Coefficients for the state $|state_idx\rangle$ that when evaluated
-                at any amplitude or frequency simply return the bare state. Note that
-                this should be the actual state index, and not the array index (for
-                instance if we have state_indices=[0, 1, 3] because we're not interested
-                in the second excited state, for the 3rd excited state we should pass 3
-                here and not 2).
+            state_idx: Coefficients for the state $|state_idx\rangle$ that when
+                evaluated at any amplitude or frequency simply return the bare state.
+                Note that this should be the actual state index, and not the array index
+                (for instance if we have state_indices=[0, 1, 3] because we're not
+                interested in the second excited state, for the 3rd excited state we
+                should pass 3 here and not 2).
         """
         coefficient_matrix_for_amp_and_state = np.zeros(
             (self.hilbert_dim, len(self.exponent_pair_idx_map)), dtype=complex
@@ -385,16 +365,14 @@ class DisplacedStateFit(DisplacedState):
         specified in options.
 
         Parameters:
-            omega_d_amp_data_slice: list
-                Pairs of omega_d, amplitude values at which the floquet modes have been
-                computed and which we will use as the independent variables to fit the
-                Floquet modes
-            ovlp_with_bare_states: np.ndarray
-                Bare state overlaps that has shape (w, a, s) where w is drive frequency,
-                a is drive amplitude and s is state_indices
-            floquet_data: np.ndarray
-                Floquet mode array with the same shape as ovlp_with_bare_states except
-                with an additional trailing dimension h, the Hilbert-space dimension.
+            omega_d_amp_data_slice: Pairs of omega_d, amplitude values at which the
+                floquet modes have been computed and which we will use as the
+                independent variables to fit the Floquet modes
+            ovlp_with_bare_states: Bare state overlaps that has shape (w, a, s) where w
+                is drive frequency, a is drive amplitude and s is state_indices
+            floquet_data: Floquet mode array with the same shape as
+                ovlp_with_bare_states except with an additional trailing dimension h,
+                the Hilbert-space dimension.
 
         Returns:
             Optimized fit coefficients
@@ -557,20 +535,19 @@ class FloquetAnalysis:
         return [self.H0, [amp * self.H1, lambda t, _: np.cos(omega_d * t)]]
 
     def run_one_floquet(
-        self, params: tuple[float, float]
+        self, omega_d_amp: tuple[float, float]
     ) -> tuple[np.ndarray, qt.Qobj]:
         """Run one instance of the problem for a pair of drive frequency and amp.
 
         Returns floquet modes as numpy column vectors, as well as the quasienergies.
-        Parameters.
-        ----------
-        params: tuple
-            pair of drive frequency and amp
+
+        Parameters:
+            omega_d_amp: Pair of drive frequency and amp.
         """
-        omega_d, _ = params
+        omega_d, _ = omega_d_amp
         T = 2.0 * np.pi / omega_d
         f_modes_0, f_energies_0 = qt.floquet_modes(
-            self.hamiltonian(params),  # type: ignore
+            self.hamiltonian(omega_d_amp),  # type: ignore
             T,
             options=qt.Options(nsteps=self.options.nsteps),
         )
@@ -580,7 +557,7 @@ class FloquetAnalysis:
                 f_modes_0,
                 f_energies_0,
                 sampling_time,
-                self.hamiltonian(params),  # type: ignore
+                self.hamiltonian(omega_d_amp),  # type: ignore
                 T,
                 options=qt.Options(nsteps=self.options.nsteps),
             )
@@ -597,14 +574,14 @@ class FloquetAnalysis:
     ) -> np.ndarray:
         """Return overlaps with "ideal" bare state at a given pair of (omega_d, amp).
 
-        Parameters.
-        ----------
-        f_modes_energies: tuple
-            output of self.run_one_floquet(params)
-        params_0: tuple
-            (omega_d_0, amp_0) to use for displaced fit
-        disp_coeffs: ndarray
-            matrix of coefficients for the displaced state
+        Parameters:
+            f_modes_energies: output of self.run_one_floquet(params)
+            params_0: (omega_d_0, amp_0) to use for displaced fit
+            displaced_state: Instance of DisplacedState
+            previous_coefficients: Coefficients from the previous amplitude range that
+                will be used when calculating overlap of the floquet modes against
+                the 'bare' states specified by previous_coefficients
+
         """
         f_modes_0, _ = f_modes_energies
         # construct column vectors to compute overlaps
@@ -616,6 +593,7 @@ class FloquetAnalysis:
         modes_quasies_ovlps = np.zeros(
             (len(self.state_indices), 1 + self.hilbert_dim), dtype=complex
         )
+        # TODO: refactor using overlap_with_bare_states method?
         ideal_displaced_state_array = np.array(
             [
                 displaced_state.displaced_state(
