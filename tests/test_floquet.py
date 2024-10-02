@@ -128,7 +128,9 @@ def test_one_D_amplitudes(setup_floquet: tuple):
     assert model.drive_amplitudes.shape == (n_amps, n_omega_d)
     # Compare all drive amplitudes to those at a specific frequency, ensure they are
     # all identical
-    equal_drive_for_omega_d = model.drive_amplitudes == model.drive_amplitudes[:, 0, None]
+    equal_drive_for_omega_d = (
+        model.drive_amplitudes == model.drive_amplitudes[:, 0, None]
+    )
     assert equal_drive_for_omega_d.all()
 
 
