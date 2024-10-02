@@ -15,9 +15,50 @@ Requires Python 3.10+
 
 Documentation is available at [https://dkweiss.net/floquet/](https://dkweiss.net/floquet/)
 
-## Jump in
+## Example
 
-Please see the [demo](https://github.com/dkweiss31/floquet/blob/main/docs/examples/transmon.ipynb) for an example of how to set up a floquet simulation on a transmon. There we plot the "scar" plots which allow for "birds-eye view" of ionization. We then also plot the [Blais branch crossing results](https://arxiv.org/abs/2402.06615) to understand which states are responsible for the ionization. 
+Before jumping straight into the Floquet analysis, we first need to define our system Hamiltonian and the drive parameters. Here we take the example of a transmon and utilize the scubits library to help define the system Hamiltonian. Note however that the code accepts QuTiP `Qobj` as input for the Hamiltonian. 
+```python
+import numpy as np
+import qutip as qt
+import scqubits as scq
+
+num_states = 20
+qubit_params = {"EJ": 20.0, "EC": 0.2, "ng": 0.25, "ncut": 41}
+tmon = scq.Transmon(**qubit_params, truncated_dim=num_states)
+hilbert_space = scq.HilbertSpace([tmon])
+hilbert_space.generate_lookup()
+evals = hilbert_space["evals"][0][0:num_states]
+# Define the Hamiltonian of the transmon in its eigenbasis, in which H0 is diagonal
+H0 = 2.0 * np.pi * qt.Qobj(np.diag(evals - evals[0]))
+# Use this helper method to define the charge-number operator in the dressed eigenbasis 
+H1 = hilbert_space.op_in_dressed_eigenbasis(tmon.n_operator)
+```
+We then also need to specify the drive frequencies we plan to drive at, which correspond to the cavity frequencies
+```python
+omega_d_linspace = 2.0 * np.pi * np.linspace(7.5, 10.0, 120)
+```
+Finally, we specify the induced ac-stark shift that we want the qubit to experience. The dispersive coupling of a qubit to the cavity differs as a function of the cavity frequency. Thus we provide helper functions for normalizing the drive amplitudes so that we scan over the same induced ac-Stark shifts for all given frequencies. 
+```python
+import floquet as ft
+
+state_indices = [0, 1]  # get data for ground and first excited states
+chi_ac_linspace = 2.0 * np.pi * np.linspace(0.0, 0.1, 59) # 100 MHz ac-Stark shift
+chi_to_amp = ft.ChiacToAmp(H0, H1, state_indices, omega_d_linspace)
+drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
+```
+We can now pass these derived quantities to `Model` which specifies the model system
+```python
+model = ft.Model(
+    H0, H1, omega_d_values=omega_d_values, drive_amplitudes=drive_amplitudes
+)
+```
+We are now ready to create an instance of the `FloquetAnalysis` class, and run the full Floquet simulation
+```python
+floquet_analysis = ft.FloquetAnalysis(model, state_indices=state_indices)
+data_vals = floquet_analysis.run()
+```
+`data_vals` is a dictionary containing all quantities computed during the call to `run()`. This includes the overlap with the "ideal" displaced state, which can be plotted to reveal "scars" in the drive frequency and amplitude space where resonances occur. Additionally we compute the [Blais branch crossing analysis](https://arxiv.org/abs/2402.06615) to understand which states are responsible for ionization. See the [demo](https://github.com/dkweiss31/floquet/blob/main/docs/examples/transmon.ipynb) to plot and visualize these quantities.
 
 ## Citation
 
