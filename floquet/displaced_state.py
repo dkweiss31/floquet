@@ -7,7 +7,7 @@ import numpy as np
 import qutip as qt
 import scipy as sp
 
-from .drive_parameters import DriveParameters
+from .model import Model
 from .options import Options
 from .utils.parallel import parallel_map
 
@@ -17,20 +17,17 @@ class DisplacedState:
 
     Parameters:
         hilbert_dim: Hilbert space dimension
-        drive_parameters: Drive parameters used
+        model: Model including the Hamiltonian, drive amplitudes, frequencies,
+            state indices
         state_indices: States of interest
         options: Options used
     """
 
     def __init__(
-        self,
-        hilbert_dim: int,
-        drive_parameters: DriveParameters,
-        state_indices: list,
-        options: Options,
+        self, hilbert_dim: int, model: Model, state_indices: list, options: Options
     ):
         self.hilbert_dim = hilbert_dim
-        self.drive_parameters = drive_parameters
+        self.model = model
         self.state_indices = state_indices
         self.options = options
         self.exponent_pair_idx_map = self._create_exponent_pair_idx_map()
@@ -73,19 +70,16 @@ class DisplacedState:
             def _compute_bare_state(
                 omega_d: float, _array_idx: int = array_idx, _state_idx: int = state_idx
             ) -> np.ndarray:
-                omega_d_idx = self.drive_parameters.omega_d_to_idx(omega_d)
+                omega_d_idx = self.model.omega_d_to_idx(omega_d)
                 return self.displaced_state(
                     omega_d,
-                    self.drive_parameters.drive_amplitudes[amp_idx_0, omega_d_idx],
+                    self.model.drive_amplitudes[amp_idx_0, omega_d_idx],
                     _state_idx,
                     coefficients=coefficients[_array_idx],
                 ).full()[:, 0]
 
             bare_states = np.array(
-                [
-                    _compute_bare_state(omega_d)
-                    for omega_d in self.drive_parameters.omega_d_values
-                ],
+                [_compute_bare_state(omega_d) for omega_d in self.model.omega_d_values],
                 dtype=complex,
             )
             # bare states may differ as a function of omega_d, hence the bare states
@@ -123,8 +117,8 @@ class DisplacedState:
             omega_d, amp = omega_d_amp
             for array_idx, state_idx in enumerate(self.state_indices):
                 floquet_mode_for_idx = floquet_modes[
-                    self.drive_parameters.omega_d_to_idx(omega_d),
-                    self.drive_parameters.amp_to_idx(amp, omega_d),
+                    self.model.omega_d_to_idx(omega_d),
+                    self.model.amp_to_idx(amp, omega_d),
                     array_idx,
                 ]
                 disp_state = self.displaced_state(
@@ -138,10 +132,8 @@ class DisplacedState:
                 )
             return overlap
 
-        omega_d_amp_params = self.drive_parameters.omega_d_amp_params(amp_idxs)
-        amp_range_vals = self.drive_parameters.drive_amplitudes[
-            amp_idxs[0] : amp_idxs[1]
-        ]
+        omega_d_amp_params = self.model.omega_d_amp_params(amp_idxs)
+        amp_range_vals = self.model.drive_amplitudes[amp_idxs[0] : amp_idxs[1]]
         result = list(
             parallel_map(
                 self.options.num_cpus, _run_overlap_displaced, omega_d_amp_params
@@ -149,7 +141,7 @@ class DisplacedState:
         )
         return np.array(result).reshape(
             (
-                len(self.drive_parameters.omega_d_values),
+                len(self.model.omega_d_values),
                 len(amp_range_vals),
                 len(self.state_indices),
             )
@@ -211,12 +203,8 @@ class DisplacedState:
         but the fit is nominally set to order four. We additionally eliminate the
         constant term that should always be either zero or one.
         """
-        cutoff_omega_d = min(
-            len(self.drive_parameters.omega_d_values), self.options.fit_cutoff
-        )
-        cutoff_amp = min(
-            len(self.drive_parameters.drive_amplitudes), self.options.fit_cutoff
-        )
+        cutoff_omega_d = min(len(self.model.omega_d_values), self.options.fit_cutoff)
+        cutoff_amp = min(len(self.model.drive_amplitudes), self.options.fit_cutoff)
         idx_exp_map = [
             (idx_1, idx_2)
             for idx_1 in range(cutoff_omega_d)

@@ -6,7 +6,7 @@ import numpy as np
 import qutip as qt
 
 from .displaced_state import DisplacedState, DisplacedStateFit
-from .drive_parameters import DriveParameters
+from .model import Model
 from .options import Options
 from .utils.file_io import Serializable
 from .utils.parallel import parallel_map
@@ -20,12 +20,8 @@ class FloquetAnalysis(Serializable):
     workflow, see the [transmon](../examples/transmon) tutorial.
 
     Arguments:
-        H0: Drift Hamiltonian, which must be diagonal and provided in units such that
-            H0 can be passed directly to qutip.
-        H1: Drive operator, which should be unitless (for instance the charge-number
-            operator n of the transmon). It will be multiplied by a drive amplitude
-            that we scan over from drive_parameters.drive_amplitudes.
-        drive_parameters: Class specifying the drive amplitudes and frequencies
+        model: Class specifying the model, including the Hamiltonian, drive amplitudes,
+            frequencies
         state_indices: State indices of interest. Defaults to [0, 1], indicating the two
             lowest-energy states.
         options: Options for the Floquet analysis.
@@ -34,36 +30,21 @@ class FloquetAnalysis(Serializable):
 
     def __init__(
         self,
-        H0: qt.Qobj | np.ndarray | list,
-        H1: qt.Qobj | np.ndarray | list,
-        drive_parameters: DriveParameters,
+        model: Model,
         state_indices: list | None = None,
         options: Options = Options(),  # noqa B008
         init_data_to_save: dict | None = None,
     ):
         if state_indices is None:
             state_indices = [0, 1]
-        if not isinstance(H0, qt.Qobj):
-            H0 = qt.Qobj(np.array(H0, dtype=complex))
-        if not isinstance(H1, qt.Qobj):
-            H1 = qt.Qobj(np.array(H1, dtype=complex))
-        self.H0 = H0
-        self.H1 = H1
-        self.drive_parameters = drive_parameters
+        self.model = model
         self.state_indices = state_indices
         self.options = options
         self.init_data_to_save = init_data_to_save
-        # Save in _init_attrs for later re-initialization. Everything added to self
-        # after this is a derived quantity
-        self.hilbert_dim = H0.shape[0]
+        self.hilbert_dim = model.H0.shape[0]
 
     def __str__(self) -> str:
         return "Running floquet simulation with parameters: \n" + super().__str__()
-
-    def hamiltonian(self, params: tuple[float, float]) -> list[qt.Qobj]:
-        """Return the Hamiltonian we actually simulate."""
-        omega_d, amp = params
-        return [self.H0, [amp * self.H1, lambda t, _: np.cos(omega_d * t)]]
 
     def run_one_floquet(
         self, omega_d_amp: tuple[float, float]
@@ -78,7 +59,7 @@ class FloquetAnalysis(Serializable):
         omega_d, _ = omega_d_amp
         T = 2.0 * np.pi / omega_d
         f_modes_0, f_energies_0 = qt.floquet_modes(
-            self.hamiltonian(omega_d_amp),  # type: ignore
+            self.model.hamiltonian(omega_d_amp),  # type: ignore
             T,
             options=qt.Options(nsteps=self.options.nsteps),
         )
@@ -88,7 +69,7 @@ class FloquetAnalysis(Serializable):
                 f_modes_0,
                 f_energies_0,
                 sampling_time,
-                self.hamiltonian(omega_d_amp),  # type: ignore
+                self.model.hamiltonian(omega_d_amp),  # type: ignore
                 T,
                 options=qt.Options(nsteps=self.options.nsteps),
             )
@@ -223,8 +204,8 @@ class FloquetAnalysis(Serializable):
 
         # initialize all arrays that will contain our data
         array_shape = (
-            len(self.drive_parameters.omega_d_values),
-            len(self.drive_parameters.drive_amplitudes),
+            len(self.model.omega_d_values),
+            len(self.model.drive_amplitudes),
             len(self.state_indices),
         )
         bare_state_overlaps = np.zeros(array_shape)
@@ -234,8 +215,8 @@ class FloquetAnalysis(Serializable):
         floquet_modes = np.zeros((*array_shape, self.hilbert_dim), dtype=complex)
         avg_excitation = np.zeros(
             (
-                len(self.drive_parameters.omega_d_values),
-                len(self.drive_parameters.drive_amplitudes),
+                len(self.model.omega_d_values),
+                len(self.model.drive_amplitudes),
                 self.hilbert_dim,
             )
         )
@@ -247,12 +228,11 @@ class FloquetAnalysis(Serializable):
         # coefficients, whereas for the Blais calculation, the bare modes are specified
         # as actual kets.
         prev_f_modes_arr = np.tile(
-            self.bare_state_array()[None, :, :],
-            (len(self.drive_parameters.omega_d_values), 1, 1),
+            self.bare_state_array()[None, :, :], (len(self.model.omega_d_values), 1, 1)
         )
         displaced_state = DisplacedStateFit(
             hilbert_dim=self.hilbert_dim,
-            drive_parameters=self.drive_parameters,
+            model=self.model,
             state_indices=self.state_indices,
             options=self.options,
         )
@@ -264,13 +244,13 @@ class FloquetAnalysis(Serializable):
         )
         num_fit_ranges = int(np.ceil(1 / self.options.fit_range_fraction))
         num_amp_pts_per_range = int(
-            np.floor(len(self.drive_parameters.drive_amplitudes) / num_fit_ranges)
+            np.floor(len(self.model.drive_amplitudes) / num_fit_ranges)
         )
         for amp_range_idx in range(num_fit_ranges):
             print(f"calculating for amp_range_idx={amp_range_idx}")
             # edge case if range doesn't fit in neatly
             if amp_range_idx == num_fit_ranges - 1:
-                amp_range_idx_final = len(self.drive_parameters.drive_amplitudes)
+                amp_range_idx_final = len(self.model.drive_amplitudes)
             else:
                 amp_range_idx_final = (amp_range_idx + 1) * num_amp_pts_per_range
             amp_idxs = [amp_range_idx * num_amp_pts_per_range, amp_range_idx_final]
@@ -305,7 +285,7 @@ class FloquetAnalysis(Serializable):
             ovlp_with_bare_states = displaced_state.overlap_with_bare_states(
                 amp_idxs[0], previous_coefficients, floquet_modes_for_range
             )
-            omega_d_amp_slice = list(self.drive_parameters.omega_d_amp_params(amp_idxs))
+            omega_d_amp_slice = list(self.model.omega_d_amp_params(amp_idxs))
             # Compute the fitted 'ideal' displaced state, excluding those
             # floquet modes experiencing resonances.
             new_coefficients = displaced_state.displaced_states_fit(
@@ -333,8 +313,8 @@ class FloquetAnalysis(Serializable):
         # (stored in intermediate_displaced_state_overlaps) to obtain the mask with
         # which we exclude some data from the fit (because we suspect they've hit
         # resonances).
-        amp_idxs = [0, len(self.drive_parameters.drive_amplitudes)]
-        omega_d_amp_slice = list(self.drive_parameters.omega_d_amp_params(amp_idxs))
+        amp_idxs = [0, len(self.model.drive_amplitudes)]
+        omega_d_amp_slice = list(self.model.omega_d_amp_params(amp_idxs))
         full_displaced_fit = displaced_state.displaced_states_fit(
             omega_d_amp_slice, intermediate_displaced_state_overlaps, floquet_modes
         )
@@ -371,14 +351,12 @@ class FloquetAnalysis(Serializable):
         prev_f_modes_arr: np.ndarray,
     ) -> tuple:
         """Run the floquet simulation over a specific amplitude range."""
-        amp_range_vals = self.drive_parameters.drive_amplitudes[
-            amp_idxs[0] : amp_idxs[1]
-        ]
+        amp_range_vals = self.model.drive_amplitudes[amp_idxs[0] : amp_idxs[1]]
 
         def _run_floquet_and_calculate(
             omega_d: float,
         ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-            omega_d_idx = self.drive_parameters.omega_d_to_idx(omega_d)
+            omega_d_idx = self.model.omega_d_to_idx(omega_d)
             amps_for_omega_d = amp_range_vals[:, omega_d_idx]
             avg_excitation_arr = np.zeros((len(amps_for_omega_d), self.hilbert_dim))
             quasienergies_arr = np.zeros_like(avg_excitation_arr)
@@ -414,7 +392,7 @@ class FloquetAnalysis(Serializable):
             parallel_map(
                 self.options.num_cpus,
                 _run_floquet_and_calculate,
-                self.drive_parameters.omega_d_values,
+                self.model.omega_d_values,
             )
         )
         (
@@ -425,32 +403,20 @@ class FloquetAnalysis(Serializable):
         ) = list(zip(*floquet_data, strict=True))
         floquet_mode_array = np.array(all_modes_quasies_ovlps, dtype=complex).reshape(
             (
-                len(self.drive_parameters.omega_d_values),
+                len(self.model.omega_d_values),
                 len(amp_range_vals),
                 len(self.state_indices),
                 1 + self.hilbert_dim,
             )
         )
         f_modes_last_amp = np.array(f_modes_last_amp, dtype=complex).reshape(
-            (
-                len(self.drive_parameters.omega_d_values),
-                self.hilbert_dim,
-                self.hilbert_dim,
-            )
+            (len(self.model.omega_d_values), self.hilbert_dim, self.hilbert_dim)
         )
         all_avg_excitation = np.array(all_avg_excitation).reshape(
-            (
-                len(self.drive_parameters.omega_d_values),
-                len(amp_range_vals),
-                self.hilbert_dim,
-            )
+            (len(self.model.omega_d_values), len(amp_range_vals), self.hilbert_dim)
         )
         all_quasienergies = np.array(all_quasienergies).reshape(
-            (
-                len(self.drive_parameters.omega_d_values),
-                len(amp_range_vals),
-                self.hilbert_dim,
-            )
+            (len(self.model.omega_d_values), len(amp_range_vals), self.hilbert_dim)
         )
         bare_state_overlaps = np.abs(floquet_mode_array[..., 0])
         floquet_modes = floquet_mode_array[..., 1:]

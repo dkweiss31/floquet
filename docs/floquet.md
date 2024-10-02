@@ -14,9 +14,9 @@ The **floquet** Python API consists largely of the **floquet_analysis** function
     options:
         show_source: false
 
-## Drive parameters
+## Model
 
-::: floquet.drive_parameters
+::: floquet.model
     options:
         show_source: false
 

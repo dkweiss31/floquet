@@ -4,8 +4,8 @@ from .amplitude_converters import ChiacToAmp as ChiacToAmp, XiSqToAmp as XiSqToA
 from .floquet import (
     DisplacedState as DisplacedState,
     DisplacedStateFit as DisplacedStateFit,
-    DriveParameters as DriveParameters,
     FloquetAnalysis as FloquetAnalysis,
+    Model as Model,
 )
 from .options import Options as Options
 from .utils.file_io import (

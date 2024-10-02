@@ -16,16 +16,12 @@ class ChiacToAmp:
     """  # noqa E501
 
     def __init__(
-        self,
-        H0: qt.Qobj,
-        H1: qt.Qobj,
-        state_indices: list,
-        omega_d_linspace: np.ndarray,
+        self, H0: qt.Qobj, H1: qt.Qobj, state_indices: list, omega_d_values: np.ndarray
     ):
         self.H0 = H0
         self.H1 = H1
         self.state_indices = state_indices
-        self.omega_d_linspace = omega_d_linspace
+        self.omega_d_linspace = omega_d_values
 
     def amplitudes_for_omega_d(self, chi_ac_linspace: np.ndarray) -> np.ndarray:
         r"""Return drive amplitudes corresponding to $\chi_{\rm ac}$ values."""
