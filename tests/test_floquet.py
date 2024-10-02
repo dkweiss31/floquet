@@ -53,6 +53,10 @@ def setup_floquet() -> tuple:
 
 
 def test_chi_vs_xi(setup_floquet: tuple):
+    r"""Test that $chi_{\rm ac}$ and $|\xi|^2$ calculations agree.
+
+    They are related by the formula $\frac{1}{2}|\xi|^2=\chi_{\rm ac}/E_{C}$.
+    """
     floquet_transmon, _, chi_ac_linspace = setup_floquet
     amps_from_chi_ac = floquet_transmon.model.drive_amplitudes
     EC = floquet_transmon.init_data_to_save["EC"]
@@ -108,6 +112,24 @@ def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
     assert new_floquet_transmon == floquet_transmon
     for key in data_dict:
         assert np.allclose(data_dict[key], new_data_dict[key])
+
+
+def test_one_D_amplitudes(setup_floquet: tuple):
+    floquet_transmon, _, _ = setup_floquet
+    n_omega_d = len(floquet_transmon.model.omega_d_values)
+    n_amps = len(floquet_transmon.model.drive_amplitudes)
+    drive_amplitudes = 2.0 * np.pi * np.linspace(0.0, 6.0, n_amps)
+    model = Model(
+        floquet_transmon.model.H0,
+        floquet_transmon.model.H1,
+        floquet_transmon.model.omega_d_values,
+        drive_amplitudes,
+    )
+    assert model.drive_amplitudes.shape == (n_amps, n_omega_d)
+    # Compare all drive amplitudes to those at a specific frequency, ensure they are
+    # all identical
+    equal_drive_for_omega_d = model.drive_amplitudes == model.drive_amplitudes[:, 0, None]
+    assert equal_drive_for_omega_d.all()
 
 
 def test_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
