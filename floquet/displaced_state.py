@@ -210,9 +210,12 @@ class DisplacedState:
             for idx_1 in range(cutoff_omega_d)
             for idx_2 in range(cutoff_amp)
         ]
-        # kill constant term, which should always be 1 or 0 depending
-        # on if the component is the same as the state being fit
-        idx_exp_map.remove((0, 0))
+        # Kill constant term, which should always be 1 or 0 depending
+        # on if the component is the same as the state being fit.
+        # Moreover kill any terms depending only on drive frequency, since these
+        # coefficients must be zero as the states have to agree at zero drive strength.
+        for idx in range(cutoff_omega_d):
+            idx_exp_map.remove((idx, 0))
         weighted_vals = [1.01 * idx_1 + idx_2 for (idx_1, idx_2) in idx_exp_map]
         sorted_idxs = np.argsort(weighted_vals)
         sorted_idx_exp_map = {}
