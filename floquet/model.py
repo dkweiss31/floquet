@@ -12,6 +12,9 @@ from .utils.file_io import Serializable
 class Model(Serializable):
     """Specify the model, including the Hamiltonian, drive strengths and frequencies.
 
+    Can be subclassed to e.g. override the hamiltonian() method for a different (but
+    still periodic!) Hamiltonian.
+
     Parameters:
         H0: Drift Hamiltonian, which must be diagonal and provided in units such that
             H0 can be passed directly to qutip.
