@@ -5,8 +5,10 @@ from itertools import chain, product
 
 import numpy as np
 
+from .utils.file_io import Serializable
 
-class DriveParameters:
+
+class DriveParameters(Serializable):
     """Class that handles the drive strength and frequency.
 
     Parameters:

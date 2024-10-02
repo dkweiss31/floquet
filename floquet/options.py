@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+from .utils.file_io import Serializable
 
-class Options:
+
+class Options(Serializable):
     """Options for the floquet analysis.
 
     fit_range_fraction: float

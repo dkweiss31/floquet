@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import ast
 import time
 
 import numpy as np
@@ -9,19 +8,16 @@ import qutip as qt
 from .displaced_state import DisplacedState, DisplacedStateFit
 from .drive_parameters import DriveParameters
 from .options import Options
-from .utils.file_io import extract_info_from_h5, update_data_in_h5, write_to_h5
+from .utils.file_io import Serializable
 from .utils.parallel import parallel_map
 
 
-def floquet_analysis(
-    H0: qt.Qobj | np.ndarray | list,
-    H1: qt.Qobj | np.ndarray | list,
-    drive_parameters: DriveParameters,
-    state_indices: list | None = None,
-    options: Options = Options(),  # noqa B008
-    init_data_to_save: dict | None = None,
-) -> FloquetAnalysis:
+class FloquetAnalysis(Serializable):
     """Perform a floquet analysis to identify nonlinear resonances.
+
+    In most workflows, one needs only to call the run() method which performs
+    both the displaced state fit and the Blais branch analysis. For an example
+    workflow, see the [transmon](../examples/transmon) tutorial.
 
     Arguments:
         H0: Drift Hamiltonian, which must be diagonal and provided in units such that
@@ -34,69 +30,23 @@ def floquet_analysis(
             lowest-energy states.
         options: Options for the Floquet analysis.
         init_data_to_save: Initial parameter metadata to save to file. Defaults to None.
-
-    Returns:
-        FloquetAnalysis object on which we can call run() to perform the full floquet
-            simulation.
-    """
-    if state_indices is None:
-        state_indices = [0, 1]
-    if not isinstance(H0, qt.Qobj):
-        H0 = qt.Qobj(np.array(H0, dtype=complex))
-    if not isinstance(H1, qt.Qobj):
-        H1 = qt.Qobj(np.array(H1, dtype=complex))
-    return FloquetAnalysis(
-        H0,
-        H1,
-        drive_parameters,
-        state_indices,
-        options,
-        init_data_to_save=init_data_to_save,
-    )
-
-
-def floquet_analysis_from_file(filepath: str) -> FloquetAnalysis:
-    """Reinitialize a FloquetAnalysis object from file.
-
-    Here we only reinitialize the input parameters and not the computed data.
-
-    Arguments:
-        filepath: Path to the file
-
-    Returns:
-        FloquetAnalysis object with identical initial parameters to the one previously
-            written to file.
-    """
-    _, param_dict = extract_info_from_h5(filepath)
-    floquet_init = ast.literal_eval(param_dict["floquet_analysis_init"])
-    return floquet_analysis(
-        floquet_init["H0"],
-        floquet_init["H1"],
-        drive_parameters=DriveParameters(**floquet_init["drive_parameters"]),
-        state_indices=floquet_init["state_indices"],
-        options=Options(**floquet_init["options"]),
-        init_data_to_save=floquet_init["init_data_to_save"],
-    )
-
-
-class FloquetAnalysis:
-    """Class containing methods for performing full Floquet analysis.
-
-    This class should be instantiated by calling the function floquet_analysis().
-    In most workflows, one needs only then to call then run() method which performs
-    both the displaced state fit and the Blais branch analysis. For an example
-    workflow, see the [transmon](../examples/transmon) tutorial.
     """
 
     def __init__(
         self,
-        H0: qt.Qobj,
-        H1: qt.Qobj,
+        H0: qt.Qobj | np.ndarray | list,
+        H1: qt.Qobj | np.ndarray | list,
         drive_parameters: DriveParameters,
-        state_indices: list,
-        options: Options,
+        state_indices: list | None = None,
+        options: Options = Options(),  # noqa B008
         init_data_to_save: dict | None = None,
     ):
+        if state_indices is None:
+            state_indices = [0, 1]
+        if not isinstance(H0, qt.Qobj):
+            H0 = qt.Qobj(np.array(H0, dtype=complex))
+        if not isinstance(H1, qt.Qobj):
+            H1 = qt.Qobj(np.array(H1, dtype=complex))
         self.H0 = H0
         self.H1 = H1
         self.drive_parameters = drive_parameters
@@ -105,48 +55,10 @@ class FloquetAnalysis:
         self.init_data_to_save = init_data_to_save
         # Save in _init_attrs for later re-initialization. Everything added to self
         # after this is a derived quantity
-        self._init_attrs = set(self.__dict__.keys())
         self.hilbert_dim = H0.shape[0]
 
-    def get_initdata(self) -> dict:
-        """Collect all init attributes for writing to file."""
-        init_dict = {k: v for k, v in self.__dict__.items() if k in self._init_attrs}
-        new_init_dict = {}
-        for k, v in init_dict.items():
-            if isinstance(v, qt.Qobj):
-                new_init_dict[k] = v.data.toarray().tolist()
-            elif isinstance(v, np.ndarray):
-                new_init_dict[k] = v.tolist()
-            elif isinstance(v, Options):
-                new_init_dict[k] = vars(v)
-            elif isinstance(v, DriveParameters):
-                dp_dict = {}
-                for dp_key, dp_val in vars(v).items():
-                    dp_dict[dp_key] = dp_val.tolist()
-                new_init_dict[k] = dp_dict
-            else:
-                new_init_dict[k] = v
-        return new_init_dict
-
-    def param_dict(self) -> dict:
-        """Collect all attributes for writing to file, including derived ones."""
-        if self.init_data_to_save is None:
-            self.init_data_to_save = {}
-        return (
-            vars(self.options)
-            | vars(self.drive_parameters)
-            | self.init_data_to_save
-            | {
-                "hilbert_dim": self.hilbert_dim,
-                "floquet_analysis_init": self.get_initdata(),
-            }
-        )
-
     def __str__(self) -> str:
-        params = self.param_dict()
-        params.pop("floquet_analysis_init")
-        parts_str = "\n".join(f"{k}: {v}" for k, v in params.items() if v is not None)
-        return "Running floquet simulation with parameters: \n" + parts_str
+        return "Running floquet simulation with parameters: \n" + super().__str__()
 
     def hamiltonian(self, params: tuple[float, float]) -> list[qt.Qobj]:
         """Return the Hamiltonian we actually simulate."""
@@ -306,8 +218,6 @@ class FloquetAnalysis:
         state.
         """
         # Write the parameters to file and print them out
-        if filepath is not None:
-            write_to_h5(filepath, {}, self.param_dict())
         print(self)
         start_time = time.time()
 
@@ -443,7 +353,7 @@ class FloquetAnalysis:
             data_dict["floquet_modes"] = floquet_modes
         print(f"finished in {(time.time() - start_time) / 60} minutes")
         if filepath is not None:
-            update_data_in_h5(filepath, data_dict)
+            self.write_to_file(filepath, data_dict)
         return data_dict
 
     @staticmethod

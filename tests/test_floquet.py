@@ -10,9 +10,9 @@ from floquet import (
     ChiacToAmp,
     DisplacedState,
     DriveParameters,
-    floquet_analysis,
-    floquet_analysis_from_file,
+    FloquetAnalysis,
     Options,
+    read_from_file,
     XiSqToAmp,
 )
 
@@ -46,7 +46,7 @@ def setup_floquet() -> tuple:
     chi_to_amp = ChiacToAmp(H0, H1, state_indices, omega_d_values)
     drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
     drive_parameters = DriveParameters(omega_d_values, drive_amplitudes)
-    floquet_transmon = floquet_analysis(
+    floquet_transmon = FloquetAnalysis(
         H0,
         H1,
         drive_parameters,
@@ -108,9 +108,19 @@ def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
                 ]
             )
             assert 0.98 < overlap < 1.0
-    # reinit
-    reinit_floquet_transmon = floquet_analysis_from_file(filepath)
-    assert reinit_floquet_transmon.get_initdata() == floquet_transmon.get_initdata()
+    floquet_transmon.write_to_file(filepath, data_dict)
+    new_floquet_transmon, new_data_dict = read_from_file(filepath)
+    assert new_floquet_transmon == floquet_transmon
+    for key in data_dict:
+        assert np.allclose(data_dict[key], new_data_dict[key])
+
+
+def test_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
+    floquet_transmon, _, _ = setup_floquet
+    filepath = _filepath(tmp_path)
+    floquet_transmon.write_to_file(filepath, {})
+    new_floquet_transmon, _ = read_from_file(filepath)
+    assert new_floquet_transmon == floquet_transmon
 
 
 def test_displaced_bare_state(setup_floquet: tuple):
