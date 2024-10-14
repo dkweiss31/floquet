@@ -25,7 +25,7 @@ dev = [
     "ruff",
     "codespell",
     "pygments",
-    "pytest>=7.0,<8.0",
+    "pytest",
     "pytest-xdist",
     "pymdown-extensions",
     "mkdocs",
@@ -39,7 +39,7 @@ dev = [
     "mkdocs-exclude",
     "mknotebooks",
     "nbconvert==6.5.0",
-    "sybil>=6",
+    "sybil[pytest]",
     "black",  # needed by mkdocstrings to format function signatures
 ]
 
@@ -57,9 +57,13 @@ select = ["F", "E", "W", "C90", "I", "D", "UP", "YTT", "ANN", "BLE", "B", "A", "
     "INP", "NPY201", "PIE", "T20", "PYI", "PT", "RSE", "RET", "SLF", "SIM", "INT",
     "ARG", "PTH", "PL", "TRY", "FLY", "NPY", "RUF",
 ]
+extend-select = ["D204", "D400", "D404", "D406", "D410"]
 ignore = [
     "ANN101",
+    "C901",
     "D100", "D101", "D102", "D103", "D104", "D105", "D106", "D107", "D417",
+    "E741",
+    "INP001",
     "PLC0414",
     "PLR0913", "PLR2004",
     "T201",
@@ -105,6 +109,10 @@ help = "clean the code (ruff + codespell)"
 cmd = 'echo "\n>>> pytest -n=auto tests" && pytest -n=auto tests'
 help = "run the unit tests suite (pytest)"
 
+[tool.taskipy.tasks.doctest]
+cmd = 'echo "\n>>> pytest docs" && pytest docs'
+help = "check documentation examples (doctest)"
+
 [tool.taskipy.tasks.docbuild]
 cmd = 'mkdocs build'
 help = "build the documentation website"
@@ -114,7 +122,7 @@ cmd = 'mkdocs serve'
 help = "preview documentation website with hot-reloading"
 
 [tool.taskipy.tasks.all]
-cmd = 'task clean && task test'
+cmd = 'task clean && task test && task doctest'
 help = "run all tasks before a commit (ruff + codespell + pytest + doctest)"
 
 [tool.taskipy.tasks.ci]
@@ -122,5 +130,6 @@ cmd = '''echo "\n>>> ruff check" && ruff check &&
          echo "\n>>> ruff format --check" && ruff format --check &&
          task codespell &&
          task test &&
+         task doctest &&
          task docbuild'''
 help = "run all the CI checks"

@@ -37,4 +37,3 @@ The **floquet** Python API consists largely of the **floquet_analysis** function
 ::: floquet.utils.file_io
     options:
         show_source: false
-

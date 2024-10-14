@@ -46,9 +46,8 @@ class Model(Serializable):
             drive_amplitudes = np.array(drive_amplitudes)
         if len(drive_amplitudes.shape) == 1:
             drive_amplitudes = np.tile(drive_amplitudes, (len(omega_d_values), 1)).T
-        else:
-            assert len(drive_amplitudes.shape) == 2
-            assert drive_amplitudes.shape[1] == len(omega_d_values)
+        assert len(drive_amplitudes.shape) == 2
+        assert drive_amplitudes.shape[1] == len(omega_d_values)
 
         self.H0 = H0
         self.H1 = H1
