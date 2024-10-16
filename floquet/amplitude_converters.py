@@ -6,7 +6,7 @@ class ChiacToAmp:
     r"""Convert given induced ac-stark shift values to drive amplitudes.
 
     Consider a qubit coupled to an oscillator with the interaction Hamiltonian
-    $H_I = g(ab^{\dagger} + a^{\dagger}b)$. If the oscillator is driven to
+    $H_I = g(a + a^{\dagger})(b + b^{\dagger})$. If the oscillator is driven to
     an average occupation number of $\bar{n}$, then the effective drive strength
     seen by the qubit is $\Omega_d = 2 g \sqrt{\bar{n}}$. On the other hand based
     on a Schrieffer-Wolff transformation, the interaction hamiltonian is
