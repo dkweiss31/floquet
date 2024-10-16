@@ -58,7 +58,7 @@ We are now ready to create an instance of the `FloquetAnalysis` class, and run t
 floquet_analysis = ft.FloquetAnalysis(model, state_indices=state_indices)
 data_vals = floquet_analysis.run()
 ```
-`data_vals` is a dictionary containing all quantities computed during the call to `run()`. This includes the overlap with the "ideal" displaced state, which can be plotted to reveal "scars" in the drive frequency and amplitude space where resonances occur. Additionally we compute the [Blais branch crossing analysis](https://arxiv.org/abs/2402.06615) to understand which states are responsible for ionization. See the [demo](https://github.com/dkweiss31/floquet/blob/main/docs/examples/transmon.ipynb) to plot and visualize these quantities.
+`data_vals` is a dictionary containing all quantities computed during the call to `run()`. This includes the overlap with the "ideal" displaced state, which can be plotted to reveal "scars" in the drive frequency and amplitude space where resonances occur. This part of the analysis is based on [Xiao et al, arXiv (2023)](https://arxiv.org/abs/2304.13656), see Appendices I and J. Additionally we perform a so-called branch analysis to understand which states are responsible for ionizatio, based on [Dumas et al, arXiv 2024](https://arxiv.org/abs/2402.06615). See the [demo](https://github.com/dkweiss31/floquet/blob/main/docs/examples/transmon.ipynb) for more details on the analysis and how to plot and visualize the computed quantities.
 
 ## Citation
 
