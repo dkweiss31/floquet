@@ -69,4 +69,4 @@ nav:
     - API:
         - 'floquet.md'
     - Examples:
-        - Transmon: 'examples/transmon.ipynb'
+        - Transmon: 'examples/demo.ipynb'
