@@ -51,18 +51,18 @@ options = ft.Options(num_cpus=6)
 floquet_analysis = ft.FloquetAnalysis(model, state_indices=state_indices, options=options)
 data_vals = floquet_analysis.run()
 ```
-`data_vals` is a dictionary containing all quantities computed during the call to `run()`. This includes the overlap with the "ideal" displaced state, which can be plotted to reveal "scars" in the drive frequency and amplitude space where resonances occur. This part of the analysis is based on [Xiao et al, arXiv (2023)](https://arxiv.org/abs/2304.13656), see Appendices I and J. Additionally we perform a so-called branch analysis to understand which states are responsible for ionization, based on [Dumas et al, arXiv 2024](https://arxiv.org/abs/2402.06615). See the transmon tutorial notebook under Examples on the left for more details on the analysis and how to plot and visualize the computed quantities.  
+`data_vals` is a dictionary containing all quantities computed during the call to `run()`. This includes the overlap with the "ideal" displaced state, which can be plotted to reveal "scars" in the drive frequency and amplitude space where resonances occur. This part of the analysis is based on [Xiao, Venkatraman et al, arXiv (2023)](https://arxiv.org/abs/2304.13656), see Appendices I and J. Additionally we perform a so-called branch analysis to understand which states are responsible for ionization, based on [Dumas et al, arXiv 2024](https://arxiv.org/abs/2402.06615). See the transmon tutorial notebook under Examples on the left for more details on the analysis and how to plot and visualize the computed quantities.  
 
 ## Citation
 
 If you found this package useful in academic work, please cite
 
 ```bibtex
-@unpublished{floquet2024,
+@misc{floquet2024,
   title  = {Floquet: Identifying nonlinear resonances in quantum systems due to parametric drives},
   author = {Daniel K. Weiss},
   year   = {2024},
-  url    = {https://github.com/dkweiss31/floquet}
+  howpublished    = {\url{https://github.com/dkweiss31/floquet}}
 }
 ```
 
