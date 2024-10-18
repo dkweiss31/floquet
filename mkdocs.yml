@@ -69,4 +69,7 @@ nav:
     - API:
         - 'floquet.md'
     - Examples:
-        - Transmon: 'examples/demo.ipynb'
+        - Transmon: 'examples/transmon.ipynb'
+        - Qubit parameter sweep: 'examples/EJ_sweep.ipynb'
+        - Parametric driving: 'examples/parametric.ipynb'
+        - Fluxonium: 'examples/fluxonium.ipynb'
