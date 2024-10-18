@@ -81,4 +81,4 @@ class Model(Serializable):
     def hamiltonian(self, omega_d_amp: tuple[float, float]) -> list[qt.Qobj]:
         """Return the Hamiltonian we actually simulate."""
         omega_d, amp = omega_d_amp
-        return [self.H0, [amp * self.H1, lambda t, _: np.cos(omega_d * t)]]
+        return qt.QobjEvo([self.H0, [amp * self.H1, lambda t: np.cos(omega_d * t)]])

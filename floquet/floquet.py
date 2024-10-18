@@ -100,7 +100,7 @@ class FloquetAnalysis(Serializable):
         f_modes_0, _ = f_modes_energies
         # construct column vectors to compute overlaps
         f_modes_cols = np.array(
-            [f_modes_0[idx].data.toarray()[:, 0] for idx in range(self.hilbert_dim)],
+            [f_modes_0[idx].data.to_array()[:, 0] for idx in range(self.hilbert_dim)],
             dtype=complex,
         ).T
         # return overlap and floquet mode
@@ -114,7 +114,7 @@ class FloquetAnalysis(Serializable):
                     *params_0, state_idx, previous_coefficients[array_idx]
                 )
                 .dag()
-                .data.toarray()[0]
+                .data.to_array()[0]
                 for array_idx, state_idx in enumerate(self.state_indices)
             ]
         )
@@ -137,12 +137,15 @@ class FloquetAnalysis(Serializable):
         """
         return np.squeeze(
             np.array(
-                [qt.basis(self.hilbert_dim, idx) for idx in range(self.hilbert_dim)]
+                [
+                    qt.basis(self.hilbert_dim, idx).data.to_array()
+                    for idx in range(self.hilbert_dim)
+                ]
             )
         )
 
     def _step_in_amp(
-        self, f_modes_energies: tuple[np.ndarray, qt.Qobj], prev_f_modes: np.ndarray
+        self, f_modes_energies: tuple[qt.Qobj, np.ndarray], prev_f_modes: np.ndarray
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Perform Blais branch analysis.
 
@@ -151,7 +154,7 @@ class FloquetAnalysis(Serializable):
         ordered, compute the mean excitation number, yielding our branches.
         """
         f_modes_0, f_energies_0 = f_modes_energies
-        f_modes_0 = np.squeeze(np.array(f_modes_0))
+        f_modes_0 = np.squeeze([f_mode.data.to_array() for f_mode in f_modes_0])
         all_overlaps = np.abs(np.einsum("ij,kj->ik", np.conj(prev_f_modes), f_modes_0))
         # assume that prev_f_modes_arr have been previously sorted. Question
         # is which k index has max overlap?

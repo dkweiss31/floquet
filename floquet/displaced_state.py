@@ -128,7 +128,7 @@ class DisplacedState:
                     coefficients=coefficients[array_idx],
                 ).dag()
                 overlap[array_idx] = np.abs(
-                    disp_state.data.toarray()[0] @ floquet_mode_for_idx
+                    disp_state.data.to_array()[0] @ floquet_mode_for_idx
                 )
             return overlap
 

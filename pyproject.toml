@@ -4,10 +4,10 @@ version = "0.1.0"
 requires-python = ">=3.10"
 description = "Floquet simulations for identifying resonances in quantum systems."
 dependencies = [
-    "numpy<2.0", # TODO fix
+    "numpy>=2.0",
     "scipy",
-    "scqubits",
-    "qutip>=4.7.6,<5.0", # TODO fix
+    "scqubits>=4.2",
+    "qutip>=5.0",
     "matplotlib",
     "jupyter",
     "h5py",

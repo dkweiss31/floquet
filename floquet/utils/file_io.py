@@ -58,7 +58,7 @@ class Serializable:
                     )
                 }
             elif isinstance(_val, qt.Qobj):
-                initdata[_key] = _val.data.toarray()
+                initdata[_key] = _val.data.to_array()
             else:
                 initdata[_key] = _val
         return initdata
