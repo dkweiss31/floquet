@@ -58,24 +58,19 @@ class FloquetAnalysis(Serializable):
         """
         omega_d, _ = omega_d_amp
         T = 2.0 * np.pi / omega_d
-        f_modes_0, f_energies_0 = qt.floquet_modes(
-            self.model.hamiltonian(omega_d_amp),  # type: ignore
+        fbasis = qt.FloquetBasis(
+            self.model.hamiltonian(omega_d_amp),
             T,
-            options=qt.Options(nsteps=self.options.nsteps),
+            options={"nsteps": self.options.nsteps}  # type: ignore
         )
+        f_modes_0 = fbasis.mode(0.0)
+        f_energies = fbasis.e_quasi
         sampling_time = self.options.floquet_sampling_time_fraction * T % T
-        if sampling_time != 0:
-            f_modes_t = qt.floquet_modes_t(
-                f_modes_0,
-                f_energies_0,
-                sampling_time,
-                self.model.hamiltonian(omega_d_amp),  # type: ignore
-                T,
-                options=qt.Options(nsteps=self.options.nsteps),
-            )
+        if sampling_time != 0.0:
+            f_modes_t = fbasis.mode(sampling_time)
         else:
             f_modes_t = f_modes_0
-        return f_modes_t, f_energies_0
+        return f_modes_t, f_energies
 
     def identify_floquet_modes(
         self,
