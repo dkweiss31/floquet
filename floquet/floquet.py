@@ -61,15 +61,12 @@ class FloquetAnalysis(Serializable):
         fbasis = qt.FloquetBasis(
             self.model.hamiltonian(omega_d_amp),
             T,
-            options={"nsteps": self.options.nsteps}  # type: ignore
+            options={"nsteps": self.options.nsteps},  # type: ignore
         )
         f_modes_0 = fbasis.mode(0.0)
         f_energies = fbasis.e_quasi
         sampling_time = self.options.floquet_sampling_time_fraction * T % T
-        if sampling_time != 0.0:
-            f_modes_t = fbasis.mode(sampling_time)
-        else:
-            f_modes_t = f_modes_0
+        f_modes_t = fbasis.mode(sampling_time) if sampling_time != 0.0 else f_modes_0
         return f_modes_t, f_energies
 
     def identify_floquet_modes(
