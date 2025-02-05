@@ -55,13 +55,12 @@ plugins:
     - mkdocstrings:
         handlers:
             python:
-                rendering:
+                options:
                     show_source: false
                     show_if_no_docstring: true
                     show_signature_annotations: true
                     members_order: source
                     heading_level: 4
-                selection:
                     inherited_members: true  # Allow looking up inherited methods
 
 nav:
