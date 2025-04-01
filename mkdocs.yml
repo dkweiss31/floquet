@@ -67,6 +67,8 @@ nav:
     - 'index.md'
     - API:
         - 'floquet.md'
+    - FAQ:
+        - 'FAQ.md'
     - Examples:
         - Transmon: 'examples/transmon.ipynb'
         - Qubit parameter sweep: 'examples/EJ_sweep.ipynb'
