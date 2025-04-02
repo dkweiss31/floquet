@@ -327,7 +327,10 @@ class FloquetAnalysis(Serializable):
             data_dict["floquet_modes"] = floquet_modes
         print(f"finished in {(time.time() - start_time) / 60} minutes")
         if filepath is not None:
-            self.write_to_file(filepath, data_dict | self.init_data_to_save)
+            if self.init_data_to_save is not None:
+                self.write_to_file(filepath, data_dict | self.init_data_to_save)
+            else:
+                self.write_to_file(filepath, data_dict)
         return data_dict
 
     @staticmethod
