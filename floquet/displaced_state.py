@@ -112,75 +112,85 @@ class DisplacedState:
                 number of states we are investigating
         """
         # Pre-compute basis states matrix once outside the parallel loop
-        basis_states = np.array([
-            qt.basis(self.hilbert_dim, i).full().flatten()
-            for i in range(self.hilbert_dim)
-        ])  # Shape: (h, h)
-        
+        basis_states = np.array(
+            [
+                qt.basis(self.hilbert_dim, i).full().flatten()
+                for i in range(self.hilbert_dim)
+            ]
+        )  # Shape: (h, h)
+
         # Get all omega_d and amp combinations and materialize the iterator
         omega_d_amp_params = list(self.model.omega_d_amp_params(amp_idxs))
         amp_range_vals = self.model.drive_amplitudes[amp_idxs[0] : amp_idxs[1]]
-        
+
         # Pre-compute all indices to avoid repeated calls
-        indices = [(
-            self.model.omega_d_to_idx(omega_d),
-            self.model.amp_to_idx(amp, omega_d)
-        ) for omega_d, amp in omega_d_amp_params]
-        
+        indices = [
+            (self.model.omega_d_to_idx(omega_d), self.model.amp_to_idx(amp, omega_d))
+            for omega_d, amp in omega_d_amp_params
+        ]
+
         # Create batches of points to process
-        batch_size = max(len(omega_d_amp_params) // (self.options.num_cpus * 4), 1)  # Ensure at least 4 tasks per core
+        batch_size = max(
+            len(omega_d_amp_params) // (self.options.num_cpus * 4), 1
+        )  # Ensure at least 4 tasks per core
         batched_params = [
-            (omega_d_amp_params[i:i + batch_size], indices[i:i + batch_size])
+            (omega_d_amp_params[i : i + batch_size], indices[i : i + batch_size])
             for i in range(0, len(omega_d_amp_params), batch_size)
         ]
-        
+
         def _run_overlap_displaced_batch(batch: tuple) -> list:
             params_batch, indices_batch = batch
             results = []
-            
-            for (omega_d, amp), (omega_d_idx, amp_idx) in zip(params_batch, indices_batch):
+
+            for (omega_d, amp), (omega_d_idx, amp_idx) in zip(
+                params_batch, indices_batch, strict=True
+            ):
                 # Get floquet modes for this point
-                floquet_modes_at_point = floquet_modes[omega_d_idx, amp_idx]  # Shape: (s, h)
-                
+                floquet_modes_at_point = floquet_modes[
+                    omega_d_idx, amp_idx
+                ]  # Shape: (s, h)
+
                 # Compute coefficients for all components at once using numpy operations
                 xy_data = np.array([omega_d, amp])
-                coeffs = np.array([
+                coeffs = np.array(
                     [
-                        self._coefficient_for_state(
-                            xy_data,
-                            *coefficients[array_idx, state_idx_component, :],
-                            bare_same=(state_idx == state_idx_component)
-                        )
-                        for state_idx_component in range(self.hilbert_dim)
+                        [
+                            self._coefficient_for_state(
+                                xy_data,
+                                *coefficients[array_idx, state_idx_component, :],
+                                bare_same=(state_idx == state_idx_component),
+                            )
+                            for state_idx_component in range(self.hilbert_dim)
+                        ]
+                        for array_idx, state_idx in enumerate(self.state_indices)
                     ]
-                    for array_idx, state_idx in enumerate(self.state_indices)
-                ])  # Shape: (s, h)
-                
+                )  # Shape: (s, h)
+
                 # Compute all displaced states at once using matrix multiplication
                 disp_states = coeffs @ basis_states  # Shape: (s, h)
-                
+
                 # Normalize
-                norms = np.sqrt(np.sum(np.abs(disp_states)**2, axis=1))
+                norms = np.sqrt(np.sum(np.abs(disp_states) ** 2, axis=1))
                 disp_states = disp_states / norms[:, np.newaxis]
-                
+
                 # Compute all overlaps at once
-                overlaps = np.abs(np.sum(np.conj(disp_states) * floquet_modes_at_point, axis=1))
+                overlaps = np.abs(
+                    np.sum(np.conj(disp_states) * floquet_modes_at_point, axis=1)
+                )
                 results.append(overlaps)
-                
+
             return results
 
         # Process batches in parallel
         batch_results = parallel_map(
-            self.options.num_cpus,
-            _run_overlap_displaced_batch,
-            batched_params
+            self.options.num_cpus, _run_overlap_displaced_batch, batched_params
         )
-        
+
         # Flatten results
         results = []
         for batch in batch_results:
             results.extend(batch)
-        
+
         return np.array(results).reshape(
             (
                 len(self.model.omega_d_values),
