@@ -30,6 +30,15 @@ class Serializable:
                 equal = equal and self_val == other_val
         return equal
 
+    def __hash__(self) -> int:
+        init_params = get_init_params(self)
+        vals = ()
+        for key in init_params:
+            _val = getattr(self, key)
+            val = tuple(_val) if isinstance(_val, np.ndarray) else _val
+            vals = (*vals, val)
+        return hash(vals)
+
     def __str__(self) -> str:
         return "\n".join(
             f"{k}: {getattr(self, k)}"
