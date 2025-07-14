@@ -193,7 +193,7 @@ class FloquetAnalysis(Serializable):
         We thus use the fit from the previous range of drive amplitudes as our new bare
         state.
         """
-        print(self)
+        # print(self)
         start_time = time.time()
 
         # initialize all arrays that will contain our data

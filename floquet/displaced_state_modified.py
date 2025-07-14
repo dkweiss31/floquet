@@ -111,6 +111,7 @@ class DisplacedState:
                 a is the number of drive amplitudes (specified by amp_idxs) and s is the
                 number of states we are investigating
         """
+
         # Pre-compute basis states matrix once outside the parallel loop
         basis_states = np.array(
             [
