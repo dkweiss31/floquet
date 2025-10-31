@@ -159,7 +159,7 @@ def read_from_file(filepath: str | pathlib.Path) -> tuple[Serializable, dict]:
         if "_init_attrs" in f:
             new_class_instance = _read("_init_attrs", f)
         else:
-            raise ValueError(  # noqa TRY003
+            raise ValueError(
                 f"file {filepath} does not have an attribute '_init_attrs', "
                 f"indicating it was not saved with the method write_to_file"
                 f" of the class you are trying to reinstantiate."
