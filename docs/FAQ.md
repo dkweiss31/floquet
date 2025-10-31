@@ -2,13 +2,8 @@
 
 ## How do I read my saved data?
 
-If you have run a previous simulation where you saved your data to `"foo.h5py"`, by calling e.g.
-
->>> data_vals = floquet_analysis.run(filepath="foo.h5py") # doctest: +SKIP
-
-the saved data and `FloquetAnalysis` instance that was used to produce this data can be read by calling
-
->>> read_floquet_instance, read_data = ft.read_from_file("foo.h5py") # doctest: +SKIP
+If you have run a previous simulation where you saved your data to `"foo.h5py"`, by calling e.g. `data_vals = floquet_analysis.run(filepath="foo.h5py")`, the saved data and `FloquetAnalysis` instance that was used to produce this data can be read by calling
+`read_floquet_instance, read_data = ft.read_from_file("foo.h5py")`
 
 
 ## I'm seeing weird artifacts in the displaced state overlap plots
