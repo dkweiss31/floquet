@@ -10,8 +10,12 @@ edit_uri: ""
 theme:
     name: material
     features:
+        - navigation.tabs # Tabs on top
         - navigation.sections  # Sections are included in the navigation on the left.
+        - navigation.indexes # Allow documents to directly attach to sections
+        - navigation.top # Back-to-top button
         - toc.integrate  # Table of contents is integrated on the left; does not appear separately on the right.
+        - content.code.copy # Copy button in code blocks
     palette:
         - scheme: default
           primary: indigo
@@ -57,20 +61,28 @@ plugins:
             python:
                 options:
                     show_source: false
-                    show_if_no_docstring: true
+                    show_root_heading: false
+                    show_root_toc_entry: false # Removes duplicate labels
+                    show_root_full_path: false # Removes python path e.g. script.function()
+                    show_if_no_docstring: false
+                    show_labels: false # Declutter labels of class attributes
+                    docstring_style : 'google'
+                    docstring_section_style: list
                     show_signature_annotations: true
                     members_order: source
+                    separate_signature: false # Same as before, but could be enabled to show multiline functions
+                    line_length: 88
                     heading_level: 4
-                    inherited_members: true  # Allow looking up inherited methods
-
+                    inherited_members: false  # Disallow looking up inherited methods
+                    show_bases: false
+                    merge_init_into_class: true # Declutter by merging the __init__ method defn.
+                    show_symbol_type_heading : true
 nav:
-    - 'index.md'
-    - API:
-        - 'floquet.md'
-    - FAQ:
-        - 'FAQ.md'
+    - Getting Started: index.md
     - Examples:
         - Transmon: 'examples/transmon.ipynb'
         - Qubit parameter sweep: 'examples/EJ_sweep.ipynb'
         - Parametric driving: 'examples/parametric.ipynb'
         - Fluxonium: 'examples/fluxonium.ipynb'
+    - API: floquet.md
+    - FAQ: FAQ.md
