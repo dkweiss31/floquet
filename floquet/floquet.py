@@ -19,12 +19,42 @@ class FloquetAnalysis(Serializable):
     both the displaced state fit and the Blais branch analysis. For an example
     workflow, see the [transmon](../examples/transmon) tutorial.
 
-    Arguments:
+    Parameters:
         model: Class specifying the model, including the Hamiltonian, drive amplitudes,
             frequencies
         state_indices: State indices of interest. Defaults to [0, 1], indicating the two
             lowest-energy states.
         options: Options for the Floquet analysis.
+            ??? info "Detailed `opt_options` API"
+                - fit_range_fraction (`float`, default: 1.0): Fraction of the amplitude
+                    range to sweep over before changing the definition of the bare state
+                    to that of the itted state from the previous range. For instance if
+                    fit_range_fraction=0.4, then the amplitude range is split up into
+                    three chunks: the first 40% of the amplitude linspace, then from
+                    40% -> 80%, then from 80% to the full range. For the first fraction
+                    of amplitudes, they are compared to the bare eigenstates for
+                    identification. For the second range, they are compared to the
+                    fitted state from the first range. And so on. Defaults to 1.0,
+                    indicating that no iteration is performed.
+                - floquet_sampling_time_fraction (`float`, default: 0.0): What point of
+                    the drive period we want to sample the Floquet modes. Defaults to
+                    0.0, indicating the floquet modes at t=0*T where T is the drive
+                    period.
+                - fit_cutoff (`int`, default: 4): Cutoff for the fit polynomial of the
+                    displaced state.
+                - overlap_cutoff (`float`, default: 0.8): Cutoff for fitting overlaps.
+                    Floquet modes with overlap with the "bare" state below this cutoff
+                    are not included in the fit (as they may be experiencing a
+                    resonance).
+                - nsteps (`int`, default: 30_000): QuTiP integration parameter, number
+                    of steps the solver can take.
+                - num_cpus (`int`, default: 1): Number of cpus to use in parallel
+                    computation of Floquet modes over the different values of
+                    omega_d, amp.
+                - save_floquet_modes (`bool`, default: False): Indicating whether to
+                    save the extracted Floquet modes themselves. Such data is often
+                    unnecessary and requires a fair amount of storage, so the default is
+                    False.
         init_data_to_save: Initial parameter metadata to save to file. Defaults to None.
     """
 
@@ -236,6 +266,7 @@ class FloquetAnalysis(Serializable):
                 for state_idx in self.state_indices
             ]
         )
+
         num_fit_ranges = int(np.ceil(1 / self.options.fit_range_fraction))
         num_amp_pts_per_range = int(
             np.floor(len(self.model.drive_amplitudes) / num_fit_ranges)
