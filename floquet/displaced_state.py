@@ -150,15 +150,20 @@ class DisplacedState:
         self, omega_d: float, amp: float, state_idx: int, coefficients: np.ndarray
     ) -> qt.Qobj:
         """Construct the ideal displaced state based on a polynomial expansion."""
-        # Compute the perturbation based on the given coefficients, add to bare state
-        perturbation = sum(
+        # Compute the perturbation based on the given coefficients.
+        result = sum(
             self._coefficient_for_state(
                 np.array([omega_d, amp]), *coefficients[state_idx_component, :]
             )
             * qt.basis(self.hilbert_dim, state_idx_component)
             for state_idx_component in range(self.hilbert_dim)
         )
-        result = qt.Qobj(self.model.bare_state_array()[state_idx, :]) + perturbation
+
+        # Add the perturbation to the bare state. Bare states are defined by the model.
+        # Get only the states corresponding to state_idx.
+        result += qt.Qobj(self.model.bare_state_array()[state_idx, :])
+
+        # Normalize and return
         return result.unit()
 
     def _coefficient_for_state(
