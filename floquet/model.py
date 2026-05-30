@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import itertools
-from itertools import chain, product
-
 import numpy as np
 import qutip as qt
 
@@ -67,20 +64,8 @@ class Model(Serializable):
         omega_d_idx = self.omega_d_to_idx(omega_d)
         return np.argmin(np.abs(self.drive_amplitudes[:, omega_d_idx] - amp))
 
-    def omega_d_amp_params(self, amp_idxs: list) -> itertools.chain:
-        """Return ordered chain object of the specified omega_d and amplitude values."""
-        amp_range_vals = self.drive_amplitudes[amp_idxs[0] : amp_idxs[1]]
-        _omega_d_amp_params = [
-            product([omega_d], amp_vals)
-            for omega_d, amp_vals in zip(
-                self.omega_d_values, amp_range_vals.T, strict=False
-            )
-        ]
-        return chain(*_omega_d_amp_params)
-
-    def hamiltonian(self, omega_d_amp: tuple[float, float]) -> list[qt.Qobj]:
+    def hamiltonian(self, omega_d: float, amp: float) -> qt.QobjEvo:
         """Return the Hamiltonian we actually simulate."""
-        omega_d, amp = omega_d_amp
         return qt.QobjEvo([self.H0, [amp * self.H1, lambda t: np.cos(omega_d * t)]])
 
     def bare_state_array(self) -> np.ndarray:
