@@ -86,23 +86,36 @@ def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
     for omega_d, chi_ac in omega_d_chi_ac:
         omega_d_idx = floquet_transmon.model.omega_d_to_idx(omega_d)
         amp = chi_to_amp.amplitudes_for_omega_d(chi_ac)[0, omega_d_idx]
-        for array_idx, state_idx in enumerate(floquet_transmon.state_indices):
-            disp_coeffs = data_dict["fit_data"]
-            displaced_state = DisplacedState(
-                floquet_transmon.hilbert_dim,
-                floquet_transmon.model,
-                floquet_transmon.state_indices,
-                floquet_transmon.options,
-            )
-            disp_gs = displaced_state.displaced_state(
-                omega_d, amp, state_idx=state_idx, coefficients=disp_coeffs[array_idx]
-            )
-            f_modes_energies = floquet_transmon.run_one_floquet((omega_d, amp))
+        amp_idx = floquet_transmon.model.amp_to_idx(amp, omega_d)
+
+        disp_coeffs = data_dict["fit_data"]
+        displaced_state = DisplacedState(
+            floquet_transmon.hilbert_dim,
+            floquet_transmon.model,
+            floquet_transmon.state_indices,
+            floquet_transmon.options,
+        )
+        disp_gs = displaced_state.displaced_state(
+            coefficients=disp_coeffs,
+            omega_d_idxs=(omega_d_idx, omega_d_idx + 1),
+            amp_idxs=(amp_idx, amp_idx + 1),
+        )
+
+        for array_idx, _state_idx in enumerate(floquet_transmon.state_indices):
+            f_modes, _ = floquet_transmon.run_one_floquet(omega_d, amp)
+
             floquet_mode = floquet_transmon.identify_floquet_modes(
-                f_modes_energies, (omega_d, amp), displaced_state, disp_coeffs
+                f_modes, displaced_state, disp_coeffs, omega_d_idx
             )
-            overlap = np.abs(qt.Qobj(floquet_mode[array_idx, 1:]).dag() * disp_gs)
+
+            overlap = np.abs(
+                np.dot(
+                    np.conj(floquet_mode[array_idx, 1:]), disp_gs[0, 0, array_idx, :]
+                )
+            )
+
             assert 0.98 < overlap < 1.0
+
     floquet_transmon.write_to_file(filepath, data_dict)
     new_floquet_transmon, new_data_dict = read_from_file(filepath)
     assert new_floquet_transmon == floquet_transmon
@@ -146,15 +159,21 @@ def test_displaced_bare_state(setup_floquet: tuple):
         floquet_transmon.state_indices,
         floquet_transmon.options,
     )
-    for state_idx in floquet_transmon.state_indices:
-        ideal_state = qt.basis(floquet_transmon.hilbert_dim, state_idx)
-        disp_coeffs_bare = np.zeros(
-            (floquet_transmon.hilbert_dim, len(displaced_state.exponent_pair_idx_map)),
-            dtype=complex,
-        )
 
-        # omega_d and amp values shouldn't matter
-        calc_state = displaced_state.displaced_state(
-            0.0, 0.0, state_idx, disp_coeffs_bare
-        )
-        assert calc_state == ideal_state
+    disp_coeffs_bare = np.zeros(
+        (
+            len(floquet_transmon.state_indices),
+            floquet_transmon.hilbert_dim,
+            displaced_state.exponent_pairs.shape[-1],
+        ),
+        dtype=complex,
+    )
+
+    # omega_d and amp indices shouldn't matter
+    calc_state = displaced_state.displaced_state(disp_coeffs_bare, (0, 1), (0, 1))[
+        0, 0, ...
+    ]
+
+    for array_idx, state_idx in enumerate(floquet_transmon.state_indices):
+        ideal_state = qt.basis(floquet_transmon.hilbert_dim, state_idx).full().squeeze()
+        assert np.allclose(calc_state[array_idx], ideal_state)
