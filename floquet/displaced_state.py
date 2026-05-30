@@ -53,19 +53,21 @@ class DisplacedState:
         Parameters:
             coefficients: coefficients that specify the bare state that we calculate
                 overlaps of Floquet modes against.
-                Shape: (num_states, hilbert_dim, num_fit_terms).
+                Shape: `(num_states, hilbert_dim, num_fit_terms)`.
             floquet_modes: Floquet modes to be compared to the bare states given by
                 coefficients. The -2 dimension here indexes the modes and the
                 -1 dimension indexes the hilbert space.
-                Shape: (num_omega_d, num_amps, hilbert_dim, hilbert_dim).
-            omega_d_idxs : Indices specifying the lower and upper bound of the drive
+                Shape: `(num_omega_d, num_amps, hilbert_dim, hilbert_dim)`.
+            omega_d_idxs: Indices specifying the lower and upper bound of the drive
                 frequency range. Selects all `self.model.omega_d_values` by default.
             amp_idx_0: Index specifying the lower bound of the amplitude range.
                 0 by default, i.e. selects the undriven states.
+
         Returns:
-            Overlaps between the floquet modes and corresponding the displaced states
-                specified by self.state_indices.
-                Shape: (num_omega_d, num_amps, num_states).
+            Overlaps between the floquet modes and the bare states for the
+                corresponding drive frequencies and the amplitude value at the lower
+                edge of the amplitude range, specified by amp_idx_0.
+                Shape: `(num_omega_d, num_amps, num_states)`.
         """
         floquet_modes = floquet_modes[omega_d_idxs[0] : omega_d_idxs[1], ...]
         displaced_states = self.displaced_state(
@@ -88,18 +90,21 @@ class DisplacedState:
         This is done here for a specific amplitude range.
 
         Parameters:
-            coefficients: coefficients that specify the displaced state that we calculate
-                overlaps of Floquet modes against.
-                Shape: (num_states, hilbert_dim, num_fit_terms).
+            coefficients: coefficients that specify the displaced state that we
+                calculate overlaps of Floquet modes against.
+                Shape: `(num_states, hilbert_dim, num_fit_terms)`.
             floquet_modes: Floquet modes to be compared to the bare states given by
                 coefficients.
-                Shape: (num_omega_ds, num_amps, num_states, hilbert_dim).
-            omega_d_idxs : Indices specifying the lower and upper bound of the drive
+                Shape: `(num_omega_ds, num_amps, num_states, hilbert_dim)`.
+            omega_d_idxs: Indices specifying the lower and upper bound of the drive
                 frequency range. Selects all `self.model.omega_d_values` by default.
-            amp_idxs: Indices specifying the lower and upper bound of the amplitude range.
-                Selects all self.model.drive_amplitudes by default.
+            amp_idxs: Indices specifying the lower and upper bound of the amplitude
+                range. Selects all self.model.drive_amplitudes by default.
+
         Returns:
-            Overlaps. Shape: (num_omega_ds, num_amps, num_states).
+            Overlaps between the floquet mode and the corresponding displaced state,
+                for each drive frequency and drive amplitude.
+                Shape: `(num_omega_ds, num_amps, num_states)`.
         """
         floquet_modes = floquet_modes[
             omega_d_idxs[0] : omega_d_idxs[1], amp_idxs[0] : amp_idxs[1], :, :
@@ -115,28 +120,38 @@ class DisplacedState:
         omega_d_idxs: tuple[int, int] = (0, None),
         amp_idxs: tuple[int, int] = (0, None),
     ) -> np.ndarray:
-        """Construct the ideal displaced state, $\left| \tilde{n} (\omega_d, \Omega_d) \right>$ based on a low-order perturbation around the corresponding bare state.
+        r"""Construct the ideal displaced state.
+
+        The displaced state is given by a low-order expansion around the corresponding
+        bare state. For a drive frequency $\omega_d$ and drive amplitude $\Omega_d$,
+        the displaced state is given by,
         $$
-        \left| \tilde{n} (\omega_d, \Omega_d) \right> = \left| n \right> + \sum_l \sum_{k_0, k_1} c_{n, l, k_0, k_1} \omega_d^{k_0} \Omega_d^{k_1} \left| l \right>
+        \left| \tilde{n} (\omega_d, \Omega_d) \right> = \left| n \right>
+        + \sum_l \sum_{k_0, k_1} c_{n, l, k_0, k_1}
+        \omega_d^{k_0} \Omega_d^{k_1} \left| l \right>
         $$
-        where the coefficients $c_{n, l, k_0, k_1}$ are provided in the `coefficients` argument.
-        The constant term (i.e. $k_0 = k_1 = 0$) is excluded from the fit, as indicated by the
-        Kronecker delta $\delta_{n,l}$. Note, that the (k_0, k_1) indices are stacked, and provided
-        in the order specified by `self.exponent_pairs`.
+        where the coefficients $c_{n, l, k_0, k_1}$ are provided in the `coefficients`
+        argument. The constant term (i.e. $k_0 = k_1 = 0$) is excluded from the fit.
+        Note, that the $(k_0, k_1)$ pairs are stacked, and provided by
+        `self.exponent_pairs`.
 
         Parameters:
-            coefficients: Coefficients to expand the displaced state in terms of the undriven
-                states. Shape: (num_states, hilbert_dim, num_fit_terms).
-            omega_d_idxs : Indices specifying the lower and upper bound of the drive
+            coefficients: Coefficients to expand the displaced state in terms of the
+                undriven states. Shape: `(num_states, hilbert_dim, num_fit_terms)`.
+            omega_d_idxs: Indices specifying the lower and upper bound of the drive
                 frequency range. Selects all `self.model.omega_d_values` by default.
-            amp_idxs: Indices specifying the lower and upper bound of the amplitude range.
-                Selects all self.model.drive_amplitudes by default.
+            amp_idxs: Indices specifying the lower and upper bound of the amplitude
+                range. Selects all self.model.drive_amplitudes by default. Selects
+                all self.model.drive_amplitudes by default.
 
         Returns:
-            The displaced state(s). Shape: (num_omega_ds, num_amps, num_states, hilbert_dim).
-            Careful, that the num_states index is the array index, not the state index! For example,
-            if state_indices = [0, 2], then result[0, ...] is the displaced state for state index
-            0, and result[1, ...] is the displaced state for state index 2.
+            The displaced state(s) for the specified range of drive frequencies and
+                drive amplitudes. Shape: `(num_omega_ds, num_amps, num_states,
+                hilbert_dim)`.
+                Careful, that the num_states index is the array index, not the state
+                index! For example, if state_indices = [0, 2], then result[0, ...] is
+                the displaced state for state index 0, and result[1, ...] is the
+                displaced state for state index 2.
         """
         # Tensor of polynomial terms omega^{k_0} * amp^{k_1}.
         # Shape: (num_omega_ds, num_amps, num_fit_terms)
@@ -161,9 +176,7 @@ class DisplacedState:
         return result
 
     def _create_poly_terms(self) -> np.ndarray:
-        """Compute a tensor, where each component is a polynomial term
-        omega^{k_0} * amp^{k_1} for all (omega, amp, fit_terms).
-        """
+        r"""Compute a tensor of polynomial terms $\omega_d^{k_0} * \Omega_d^{k_1}$."""
         omega_power = (
             self.model.omega_d_values[:, None, None]
             ** self.exponent_pairs[0][None, None, :]
@@ -225,18 +238,18 @@ class DisplacedStateFit(DisplacedState):
         Parameters:
             ovlp_with_bare_states: Overlap with bare states. Already trimmed to the
                 relevant range of frequencies and amplitudes.
-                Shape: (num_omega_d_in_range, num_amps_in_range, num_states).
+                Shape: `(num_omega_d_in_range, num_amps_in_range, num_states)`.
             floquet_modes: Floquet modes.
-                Shape: (num_omega_ds, num_amps, num_states, hilbert_dim).
-            omega_d_idxs : Indices specifying the lower and upper bound of the drive
+                Shape: `(num_omega_ds, num_amps, num_states, hilbert_dim)`.
+            omega_d_idxs: Indices specifying the lower and upper bound of the drive
                 frequency range. Selects all `self.model.omega_d_values` by default.
-            amp_idxs: Indices specifying the lower and upper bound of the amplitude range.
-                Selects all self.model.drive_amplitudes by default.
+            amp_idxs: Indices specifying the lower and upper bound of the amplitude
+                range. Selects all self.model.drive_amplitudes by default.
 
         Returns:
-            Optimized fit coefficients. Shape: (num_states, hilbert_dim, num_fit_terms).
+            Optimized fit coefficients.
+                Shape: `(num_states, hilbert_dim, num_fit_terms)`.
         """
-
         # Only fit states that we think haven't run into a transition,
         # and those within the specified bounds
         # mask.shape = (num_omega_ds, num_amps, num_state_indices).
@@ -299,7 +312,7 @@ class DisplacedStateFit(DisplacedState):
 
         if np.any(np.abs(masked_states_to_fit) > 1):
             warnings.warn(
-                "Large values to fit. Fit may be unreliable. Returning zeros for the fit.",
+                "Values to large. Fit may be unreliable. Returning zeros for the fit.",
                 stacklevel=3,
             )
             return np.zeros((self.hilbert_dim, num_fit_terms), dtype=complex)

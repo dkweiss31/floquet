@@ -82,14 +82,15 @@ class FloquetAnalysis(Serializable):
     ) -> tuple[np.ndarray, np.ndarray]:
         """Run one instance of the problem for a pair of drive frequency and amp.
 
-        Returns:
-            Floquet modes. Shape: (hilbert_dim, hilbert_dim), where the first index
-                labels the mode and the second the basis vector components.
-            Quasienergies. Shape: (hilbert_dim,)
-
         Parameters:
             omega_d: Drive frequency.
             amp: Drive amplitude.
+
+        Returns:
+            Floquet modes. Shape: `(hilbert_dim, hilbert_dim)`, where the first index
+                labels the mode and the second the basis vector components.
+            Quasienergies. Shape: `(hilbert_dim,)`.
+
         """
         T = 2.0 * np.pi / omega_d
         fbasis = FloquetBasis(
@@ -115,7 +116,7 @@ class FloquetAnalysis(Serializable):
         Also return that overlap value.
 
         Parameters:
-            floquet_modes: Shape: (hilbert_dim, hilbert_dim), where the first index
+            floquet_modes: Shape: `(hilbert_dim, hilbert_dim)`, where the first index
                 labels the mode and the second the basis vector components.
             displaced_state: Instance of DisplacedState.
             previous_coefficients: Coefficients from the previous amplitude range that
@@ -124,6 +125,11 @@ class FloquetAnalysis(Serializable):
             omega_d_idx: Index of the drive frequency in self.model.omega_d_values.
             amp_idx_0: Index specifying the lower bound of the amplitude range.
                 0 by default, i.e. selects the undriven states.
+
+        Returns:
+            ovlps_and_modes: Shape `(num_states, 1 + hilbert_dim)` where the first
+                column contains the bare state overlaps and the remaining columns
+                contain the corresponding floquet modes.
         """
         # Return overlaps and floquet modes
         ovlps_and_modes = np.zeros(
@@ -149,8 +155,8 @@ class FloquetAnalysis(Serializable):
 
             # Fix phase uncertainty by ensuring that the bare state overlap is real and
             # positive.
-            ovlps_and_modes[array_idx, 1:] = (
-                floquet_modes[f_idx] / np.sign(bare_state_overlap)
+            ovlps_and_modes[array_idx, 1:] = floquet_modes[f_idx] / np.sign(
+                bare_state_overlap
             )
         return ovlps_and_modes
 
