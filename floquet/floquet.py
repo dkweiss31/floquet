@@ -252,7 +252,8 @@ class FloquetAnalysis(Serializable):
                 len(self.state_indices),
                 self.hilbert_dim,
                 len(displaced_state.exponent_pair_idx_map),
-            )
+            ),
+            dtype=complex,
         )
 
         num_fit_ranges = int(np.ceil(1 / self.options.fit_range_fraction))

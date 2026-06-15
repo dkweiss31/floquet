@@ -85,4 +85,4 @@ class Model(Serializable):
 
     def bare_state_array(self) -> np.ndarray:
         """Return array of bare states."""
-        return np.identity(self.H0.shape[-1])
+        return np.identity(self.H0.shape[-1], dtype=complex)
