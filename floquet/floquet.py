@@ -449,7 +449,7 @@ class FloquetAnalysis(Serializable):
         all_quasienergies = np.array(all_quasienergies).reshape(
             (len(self.model.omega_d_values), len(amp_range_vals), self.hilbert_dim)
         )
-        bare_state_overlaps = np.abs(floquet_mode_array[..., 0])
+        bare_state_overlaps = floquet_mode_array[..., 0]
         floquet_modes = floquet_mode_array[..., 1:]
         return (
             bare_state_overlaps,
