@@ -13,8 +13,7 @@ class DisplacedState:
 
     Parameters:
         hilbert_dim: Hilbert space dimension
-        model: Model including the Hamiltonian, drive amplitudes, frequencies,
-            state indices
+        model: Model; stores the Hamiltonian, drive amplitudes, and frequencies
         state_indices: States of interest
         options: Options used
     """
