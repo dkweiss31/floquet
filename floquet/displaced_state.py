@@ -162,12 +162,9 @@ class DisplacedState:
         result = np.einsum("wat,sht->wash", _poly_terms, coefficients)
 
         # Add the perturbation to the bare state. Bare states are defined by the model.
-        # Get only the states corresponding to state_indices, and tile them for all
+        # Get only the states corresponding to state_indices, and broadcast them for all
         # omega_ds and amps.
-        result += np.tile(
-            self.model.bare_state_array()[None, None, self.state_indices, :],
-            (*result.shape[:2], 1, 1),
-        )
+        result += self.model.bare_state_array()[None, None, self.state_indices, :]
 
         # Normalize
         result /= np.linalg.norm(result, axis=-1, keepdims=True)
@@ -300,14 +297,11 @@ class DisplacedStateFit(DisplacedState):
         masked_poly_terms = poly_terms.reshape(-1, num_fit_terms)[mask_flat]
         masked_target_states = target_states.reshape(-1, self.hilbert_dim)[mask_flat]
 
-        # Bare states array (repeated for all amp-freq pairs)
-        masked_bare_states = np.tile(
-            self.model.bare_state_array()[None, state_index, :],
-            (masked_target_states.shape[0], 1),
-        )
-
         # Fit the difference between the target states and the bare states
-        masked_states_to_fit = masked_target_states - masked_bare_states
+        # Broadcast to avoid allocating an N_masked copies of the bare states
+        masked_states_to_fit = (
+            masked_target_states - self.model.bare_state_array()[None, state_index, :]
+        )
 
         if np.any(np.abs(masked_states_to_fit) > 1):
             warnings.warn(
