@@ -26,6 +26,14 @@ class DisplacedState:
         self.state_indices = state_indices
         self.options = options
         self.exponent_pairs = self._create_exponent_pairs()
+
+        omega_ds = model.omega_d_values
+        omega_d_mid = 0.5 * (omega_ds.max() + omega_ds.min())
+        omega_d_half_range = 0.5 * (omega_ds.max() - omega_ds.min())
+        amp_scale = np.abs(model.drive_amplitudes).max()
+
+        self.omega_d_scaled = (omega_ds - omega_d_mid) / omega_d_half_range
+        self.amp_scaled = self.model.drive_amplitudes.T / amp_scale
         self.poly_terms = self._create_poly_terms()
 
     def overlap_with_bare_states(
@@ -172,15 +180,11 @@ class DisplacedState:
         return result
 
     def _create_poly_terms(self) -> np.ndarray:
-        r"""Compute a tensor of polynomial terms $\omega_d^{k_0} * \Omega_d^{k_1}$."""
-        omega_power = (
-            self.model.omega_d_values[:, None, None]
-            ** self.exponent_pairs[0][None, None, :]
-        )
-        amp_power = (
-            self.model.drive_amplitudes.T[:, :, None]
-            ** self.exponent_pairs[1][None, None, :]
-        )
+        r"""Compute a tensor of polynomial terms $\omega_d^{k_0} * \Omega_d^{k_1}$.
+        Importantly the omega_d and amplitude values are scaled to the range [-1, 1].
+        """
+        omega_power = self.omega_d_scaled[:, None, None] ** self.exponent_pairs[0][None, None, :]
+        amp_power   = self.amp_scaled[:, :, None] ** self.exponent_pairs[1][None, None, :]
         return omega_power * amp_power
 
     def _create_exponent_pairs(self) -> np.ndarray:
