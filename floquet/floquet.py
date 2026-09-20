@@ -324,7 +324,12 @@ class FloquetAnalysis(Serializable):
             intermediate_displaced_state_overlaps = self._place_into(
                 amp_idxs, overlaps, intermediate_displaced_state_overlaps
             )
-            previous_coefficients = new_coefficients
+
+            for s in range(len(self.state_indices)):
+                if displaced_state.fit_ok[s]:
+                    previous_coefficients[s] = new_coefficients[s]
+                # else: keep the last good coefficients for this state
+
         # The previously extracted coefficients were valid for the amplitude ranges
         # we asked for the fit over. Now armed with with correctly identified floquet
         # modes, we recompute these coefficients over the whole sea of floquet mode data

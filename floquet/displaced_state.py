@@ -266,8 +266,10 @@ class DisplacedStateFit(DisplacedState):
         )
 
         # Fit each state separately, since their masks may differ
+        # fit_ok indicates if the fits were successful
+        self.fit_ok = np.ones(len(self.state_indices), dtype=bool)
         for arr_idx, state_idx in enumerate(self.state_indices):
-            coeffs[arr_idx] = self._fit_for_state_idx(
+            coeffs[arr_idx], self.fit_ok[arr_idx] = self._fit_for_state_idx(
                 target_states=floquet_modes[..., arr_idx, :],
                 mask=mask[..., arr_idx],
                 state_index=state_idx,
@@ -283,7 +285,7 @@ class DisplacedStateFit(DisplacedState):
         mask: np.ndarray,
         state_index: int,
         poly_terms: np.ndarray,
-    ) -> np.ndarray:
+    ) -> tuple[np.ndarray, bool]:
         num_fit_terms = self.exponent_pairs.shape[-1]
         mask_flat = mask.ravel()
 
@@ -307,19 +309,32 @@ class DisplacedStateFit(DisplacedState):
             masked_target_states - self.model.bare_state_array()[None, state_index, :]
         )
 
-        if np.any(np.abs(masked_states_to_fit) > 1):
+        # ignore any values that are too large
+        too_big = np.any(np.abs(masked_states_to_fit) > 1, axis=-1)
+        if too_big.any():
             warnings.warn(
-                "Values to large. Fit may be unreliable. Returning zeros for the fit.",
+                f"Discarding {int(too_big.sum())} of {too_big.size} outlier points "
+                f"from the fit for state {state_index}.", stacklevel=3,
+            )
+            masked_poly_terms   = masked_poly_terms[~too_big]
+            masked_states_to_fit = masked_states_to_fit[~too_big]
+
+        # Warn if not enough data points to fit
+        if masked_states_to_fit.shape[0] < num_fit_terms:
+            warnings.warn(
+                "Not enough data points to fit. Returning zeros for the fit",
                 stacklevel=3,
             )
-            return np.zeros((self.hilbert_dim, num_fit_terms), dtype=complex)
+            return np.zeros((self.hilbert_dim, num_fit_terms), dtype=complex), False
 
         # Simple linear fit: masked_states_to_fit = masked_poly_terms @ coefficients.T
         try:
             popt = np.linalg.lstsq(masked_poly_terms, masked_states_to_fit)[0].T
+            fit_ok = True
 
         except np.linalg.LinAlgError:
             warnings.warn("Fit failed. Returning zeros for the fit", stacklevel=3)
             popt = np.zeros((self.hilbert_dim, num_fit_terms), dtype=complex)
+            fit_ok = False
 
-        return popt
+        return popt, fit_ok
