@@ -181,10 +181,13 @@ class DisplacedState:
 
     def _create_poly_terms(self) -> np.ndarray:
         r"""Compute a tensor of polynomial terms $\omega_d^{k_0} * \Omega_d^{k_1}$.
+
         Importantly the omega_d and amplitude values are scaled to the range [-1, 1].
         """
-        omega_power = self.omega_d_scaled[:, None, None] ** self.exponent_pairs[0][None, None, :]
-        amp_power   = self.amp_scaled[:, :, None] ** self.exponent_pairs[1][None, None, :]
+        omega_power = (
+            self.omega_d_scaled[:, None, None] ** self.exponent_pairs[0][None, None, :]
+        )
+        amp_power = self.amp_scaled[:, :, None] ** self.exponent_pairs[1][None, None, :]
         return omega_power * amp_power
 
     def _create_exponent_pairs(self) -> np.ndarray:
@@ -314,9 +317,10 @@ class DisplacedStateFit(DisplacedState):
         if too_big.any():
             warnings.warn(
                 f"Discarding {int(too_big.sum())} of {too_big.size} outlier points "
-                f"from the fit for state {state_index}.", stacklevel=3,
+                f"from the fit for state {state_index}.",
+                stacklevel=3,
             )
-            masked_poly_terms   = masked_poly_terms[~too_big]
+            masked_poly_terms = masked_poly_terms[~too_big]
             masked_states_to_fit = masked_states_to_fit[~too_big]
 
         # Warn if not enough data points to fit
