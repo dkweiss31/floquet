@@ -104,14 +104,12 @@ def test_displaced_fit_and_reinit(setup_floquet: tuple, tmp_path: pathlib.Path):
         for array_idx, _state_idx in enumerate(floquet_transmon.state_indices):
             f_modes, _ = floquet_transmon.run_one_floquet(omega_d, amp)
 
-            floquet_mode = floquet_transmon.identify_floquet_modes(
+            _, floquet_mode = floquet_transmon.identify_floquet_modes(
                 f_modes, displaced_state, disp_coeffs, omega_d_idx
             )
 
             overlap = np.abs(
-                np.dot(
-                    np.conj(floquet_mode[array_idx, 1:]), disp_gs[0, 0, array_idx, :]
-                )
+                np.dot(np.conj(floquet_mode[array_idx]), disp_gs[0, 0, array_idx, :])
             )
 
             assert 0.98 < overlap < 1.0
