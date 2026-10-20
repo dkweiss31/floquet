@@ -29,7 +29,7 @@ dev = [
     "pytest-xdist",
     "pymdown-extensions",
     "zensical",
-    "mkdocstrings[python]",
+    "mkdocstrings[python]>=1.0.7",  # <1.0.7 breaks with pymdown-extensions>=12.2 (missing 'md' arg)
     "sybil[pytest]",
     "black",  # needed by mkdocstrings to format function signatures
 ]
