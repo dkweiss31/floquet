@@ -19,5 +19,6 @@ def sybil_setup(namespace):  # noqa ARG001
 pytest_collect_file = Sybil(
     parsers=[DocTestParser(), PythonCodeBlockParser(), SkipParser()],
     patterns=["*.md"],
+    excludes=["examples/*.md"],
     setup=sybil_setup,
 ).pytest()
