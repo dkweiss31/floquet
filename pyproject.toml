@@ -21,7 +21,7 @@ build-backend = "flit_core.buildapi"
 
 [project.optional-dependencies]
 dev = [
-    "taskipy",
+    "taskipy>=1.14",  # older versions don't support the cmd/help table syntax used below
     "ruff",
     "codespell",
     "pygments",
