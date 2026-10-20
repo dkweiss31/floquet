@@ -1,5 +1,8 @@
 # Transmon Floquet analysis
 
+!!! note "Run it yourself"
+    This page is a static export of a Jupyter notebook. [Download transmon.ipynb](transmon.ipynb) to run it yourself.
+
 In this initial demo we perform the Floquet analysis on a transmon with a readout frequency above the qubit frequency, mapping the probability of ionization as a function of drive strength and drive frequency. We then compare these simulations to Blais-style branch crossing plots, which identify the states the qubit states leak to.
 
 

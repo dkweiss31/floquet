@@ -1,5 +1,8 @@
 # Fluxonium Floquet analysis
 
+!!! note "Run it yourself"
+    This page is a static export of a Jupyter notebook. [Download fluxonium.ipynb](fluxonium.ipynb) to run it yourself.
+
 How easy is it to apply the Floquet analysis to a different qubit type? As easy as initializing another qubit that is already implemented in `scqubits`. Below we plot the displaced state overlap plot, as well as the branch analysis and quasienergies.
 
 

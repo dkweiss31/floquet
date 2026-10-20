@@ -1,5 +1,8 @@
 # EJ sweep Floquet analysis
 
+!!! note "Run it yourself"
+    This page is a static export of a Jupyter notebook. [Download EJ_sweep.ipynb](EJ_sweep.ipynb) to run it yourself.
+
 Following up the previous transmon demo, we examine the possible experimental situation where the cavity frequency to use is fixed and we instead have the freedom to sweep a transmon parameter. Here specifically we fix the transmon EC and sweep EJ.
 
 

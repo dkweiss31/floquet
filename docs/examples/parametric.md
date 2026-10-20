@@ -1,5 +1,8 @@
 # Parametric pumping below the qubit frequency
 
+!!! note "Run it yourself"
+    This page is a static export of a Jupyter notebook. [Download parametric.ipynb](parametric.ipynb) to run it yourself.
+
 We can also apply the Floquet analysis to examine parametric driving of the transmon below its resonance frequency, which is not a typical situation for transmon readout.
 
 

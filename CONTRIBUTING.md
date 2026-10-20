@@ -61,6 +61,14 @@ task docbuild
 
 This will create a `site/` directory with the contents of the documentation website. You can then simply open `site/index.html` in your web browser to view the documentation website.
 
+### Example notebooks
+
+`docs/examples/*.ipynb` are the source of truth for the tutorial notebooks, and are shipped as-is so readers can download and run them directly (linked from the top of each rendered page). Since Zensical can't render notebooks itself, each `.ipynb` is also exported to a `.md` page that Zensical does render. If you edit one of the notebooks, regenerate its `.md` export with:
+
+```shell
+task docs-convert-notebooks
+```
+
 ### Run specific tasks
 
 You can also execute tasks individually:
