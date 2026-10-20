@@ -7,7 +7,7 @@ dependencies = [
     "numpy>=2.0",
     "scipy",
     "scqubits>=4.2",
-    "qutip>=5.0",
+    "qutip>=5.0,<5.3",  # 5.3 returns scipy csc_array instead of csc_matrix, unsupported by scqubits 4.3.1
     "matplotlib",
     "jupyter",
     "h5py",
