@@ -999,7 +999,7 @@ lowest-energy states.</p>
 
 
 <h5 id="floquet.floquet.FloquetAnalysis.run_one_floquet" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">run_one_floquet</span><span class="p">(</span><span class="n">omega_d_amp</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">qt</span><span class="o">.</span><span class="n">Qobj</span><span class="p">]</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">run_one_floquet</span><span class="p">(</span><span class="n">omega_d</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">amp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span></code>
 
 <a href="#floquet.floquet.FloquetAnalysis.run_one_floquet" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1007,17 +1007,44 @@ lowest-energy states.</p>
     <div class="doc doc-contents ">
 
         <p>Run one instance of the problem for a pair of drive frequency and amp.</p>
-<p>Returns floquet modes as numpy column vectors, as well as the quasienergies.</p>
 
 
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
         <li class="doc-section-item field-body">
-            <b><code>omega_d_amp</code></b>
-              (<code><span title="tuple">tuple</span>[<span title="float">float</span>, <span title="float">float</span>]</code>)
+            <b><code>omega_d</code></b>
+              (<code><span title="float">float</span></code>)
           –
           <div class="doc-md-description">
-            <p>Pair of drive frequency and amp.</p>
+            <p>Drive frequency.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp</code></b>
+              (<code><span title="float">float</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Drive amplitude.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="numpy.ndarray">ndarray</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Floquet modes. Shape: <code>(hilbert_dim, hilbert_dim)</code>, where the first index
+labels the mode and the second the basis vector components.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+              <code><span title="numpy.ndarray">ndarray</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Quasienergies. Shape: <code>(hilbert_dim,)</code>.</p>
           </div>
         </li>
     </ul>
@@ -1031,7 +1058,7 @@ lowest-energy states.</p>
 
 
 <h5 id="floquet.floquet.FloquetAnalysis.identify_floquet_modes" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">identify_floquet_modes</span><span class="p">(</span><span class="n">f_modes_energies</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">qt</span><span class="o">.</span><span class="n">Qobj</span><span class="p">],</span> <span class="n">params_0</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">],</span> <span class="n">displaced_state</span><span class="p">:</span> <span class="n">DisplacedState</span><span class="p">,</span> <span class="n">previous_coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">identify_floquet_modes</span><span class="p">(</span><span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">displaced_state</span><span class="p">:</span> <span class="n">DisplacedState</span><span class="p">,</span> <span class="n">previous_coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">omega_d_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">amp_idx_0</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span></code>
 
 <a href="#floquet.floquet.FloquetAnalysis.identify_floquet_modes" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1045,19 +1072,12 @@ lowest-energy states.</p>
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
         <li class="doc-section-item field-body">
-            <b><code>f_modes_energies</code></b>
-              (<code><span title="tuple">tuple</span>[<span title="numpy.ndarray">ndarray</span>, <span title="qutip.Qobj">Qobj</span>]</code>)
+            <b><code>floquet_modes</code></b>
+              (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
-            <p>output of self.run_one_floquet(params)</p>
-          </div>
-        </li>
-        <li class="doc-section-item field-body">
-            <b><code>params_0</code></b>
-              (<code><span title="tuple">tuple</span>[<span title="float">float</span>, <span title="float">float</span>]</code>)
-          –
-          <div class="doc-md-description">
-            <p>(omega_d_0, amp_0) to use for displaced fit</p>
+            <p>Shape: <code>(hilbert_dim, hilbert_dim)</code>, where the first index
+labels the mode and the second the basis vector components.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1065,7 +1085,7 @@ lowest-energy states.</p>
               (<code><a class="autorefs autorefs-internal" title="              DisplacedState(hilbert_dim: int, model: Model, state_indices: list, options: Options) (floquet.displaced_state.DisplacedState)" href="./#floquet.displaced_state.DisplacedState">DisplacedState</a></code>)
           –
           <div class="doc-md-description">
-            <p>Instance of DisplacedState</p>
+            <p>Instance of DisplacedState.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1075,7 +1095,48 @@ lowest-energy states.</p>
           <div class="doc-md-description">
             <p>Coefficients from the previous amplitude range that
 will be used when calculating overlap of the floquet modes against
-the 'bare' states specified by previous_coefficients</p>
+the 'bare' states specified by previous_coefficients.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>omega_d_idx</code></b>
+              (<code><span title="int">int</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Index of the drive frequency in self.model.omega_d_values.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp_idx_0</code></b>
+              (<code><span title="int">int</span></code>, default:
+                  <code>0</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Index specifying the lower bound of the amplitude range.
+0 by default, i.e. selects the undriven states.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+<b><code>bare_state_overlaps</code></b> (              <code><span title="numpy.ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Shape <code>(num_states,)</code>. Overlap of each identified
+floquet mode with its displaced state.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+<b><code>identified_modes</code></b> (              <code><span title="numpy.ndarray">ndarray</span></code>
+)          –
+          <div class="doc-md-description">
+            <p>Shape <code>(num_states, hilbert_dim)</code>. The identified
+floquet modes, with phase fixed such that the overlap is real and
+positive.</p>
           </div>
         </li>
     </ul>
@@ -1200,8 +1261,7 @@ state.</p>
               (<code><a class="autorefs autorefs-internal" title="              Model(H0: qt.Qobj | np.ndarray | list, H1: qt.Qobj | np.ndarray | list, omega_d_values: np.ndarray, drive_amplitudes: np.ndarray) (floquet.model.Model)" href="./#floquet.model.Model">Model</a></code>)
           –
           <div class="doc-md-description">
-            <p>Model including the Hamiltonian, drive amplitudes, frequencies,
-state indices</p>
+            <p>Model; stores the Hamiltonian, drive amplitudes, and frequencies</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1247,7 +1307,7 @@ state indices</p>
 
 
 <h5 id="floquet.displaced_state.DisplacedState.overlap_with_bare_states" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">overlap_with_bare_states</span><span class="p">(</span><span class="n">amp_idx_0</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">overlap_with_bare_states</span><span class="p">(</span><span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">omega_d_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">amp_idx_0</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
 
 <a href="#floquet.displaced_state.DisplacedState.overlap_with_bare_states" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1271,21 +1331,13 @@ own peril.</p>
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
         <li class="doc-section-item field-body">
-            <b><code>amp_idx_0</code></b>
-              (<code><span title="int">int</span></code>)
-          –
-          <div class="doc-md-description">
-            <p>Index specifying the lower bound of the amplitude range.</p>
-          </div>
-        </li>
-        <li class="doc-section-item field-body">
             <b><code>coefficients</code></b>
               (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
             <p>coefficients that specify the bare state that we calculate
 overlaps of Floquet modes against.
-Shape: (num_states, hilbert_dim, num_fit_terms).</p>
+Shape: <code>(num_states, hilbert_dim, num_fit_terms)</code>.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1294,14 +1346,49 @@ Shape: (num_states, hilbert_dim, num_fit_terms).</p>
           –
           <div class="doc-md-description">
             <p>Floquet modes to be compared to the bare states given by
-coefficients</p>
+coefficients. The -2 dimension here indexes the modes and the
+-1 dimension indexes the hilbert space.
+Shape: <code>(num_omega_d, num_amps, hilbert_dim, hilbert_dim)</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>omega_d_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the drive
+frequency range. Selects all <code>self.model.omega_d_values</code> by default.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp_idx_0</code></b>
+              (<code><span title="int">int</span></code>, default:
+                  <code>0</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Index specifying the lower bound of the amplitude range.
+0 by default, i.e. selects the undriven states.</p>
           </div>
         </li>
     </ul>
-        <p>Returns:
-    overlaps with shape (w,a,s) where w is the number of drive frequencies,
-        a is the number of drive amplitudes (specified by amp_idxs) and s is the
-        number of states we are investigating</p>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="numpy.ndarray">ndarray</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Overlaps between the floquet modes and the bare states for the
+corresponding drive frequencies and the amplitude value at the lower
+edge of the amplitude range, specified by amp_idx_0.
+Shape: <code>(num_omega_d, num_amps, num_states)</code>.</p>
+          </div>
+        </li>
+    </ul>
 
 
     </div>
@@ -1312,7 +1399,7 @@ coefficients</p>
 
 
 <h5 id="floquet.displaced_state.DisplacedState.overlap_with_displaced_states" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">overlap_with_displaced_states</span><span class="p">(</span><span class="n">amp_idxs</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">overlap_with_displaced_states</span><span class="p">(</span><span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">omega_d_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">amp_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
 
 <a href="#floquet.displaced_state.DisplacedState.overlap_with_displaced_states" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1326,21 +1413,13 @@ coefficients</p>
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
         <li class="doc-section-item field-body">
-            <b><code>amp_idxs</code></b>
-              (<code><span title="list">list</span></code>)
-          –
-          <div class="doc-md-description">
-            <p>list of lower and upper amplitude indices specifying the range of
-drive amplitudes this calculation should be done for</p>
-          </div>
-        </li>
-        <li class="doc-section-item field-body">
             <b><code>coefficients</code></b>
               (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
             <p>coefficients that specify the displaced state that we
-calculate overlaps of Floquet modes against</p>
+calculate overlaps of Floquet modes against.
+Shape: <code>(num_states, hilbert_dim, num_fit_terms)</code>.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1348,15 +1427,48 @@ calculate overlaps of Floquet modes against</p>
               (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
-            <p>Floquet modes to be compared to the displaced states given by
-coefficients</p>
+            <p>Floquet modes to be compared to the bare states given by
+coefficients.
+Shape: <code>(num_omega_ds, num_amps, num_states, hilbert_dim)</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>omega_d_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the drive
+frequency range. Selects all <code>self.model.omega_d_values</code> by default.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the amplitude
+range. Selects all self.model.drive_amplitudes by default.</p>
           </div>
         </li>
     </ul>
-        <p>Returns:
-    overlaps with shape (w,a,s) where w is the number of drive frequencies,
-        a is the number of drive amplitudes (specified by amp_idxs) and s is the
-        number of states we are investigating</p>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="numpy.ndarray">ndarray</span></code>
+          –
+          <div class="doc-md-description">
+            <p>Overlaps between the floquet mode and the corresponding displaced state,
+for each drive frequency and drive amplitude.
+Shape: <code>(num_omega_ds, num_amps, num_states)</code>.</p>
+          </div>
+        </li>
+    </ul>
 
 
     </div>
@@ -1367,14 +1479,81 @@ coefficients</p>
 
 
 <h5 id="floquet.displaced_state.DisplacedState.displaced_state" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">displaced_state</span><span class="p">(</span><span class="n">omega_d</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">amp</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">state_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">qt</span><span class="o">.</span><span class="n">Qobj</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">displaced_state</span><span class="p">(</span><span class="n">coefficients</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">omega_d_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">amp_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
 
 <a href="#floquet.displaced_state.DisplacedState.displaced_state" class="headerlink" title="Permanent link">¤</a></h5>
 
 
     <div class="doc doc-contents ">
 
-        <p>Construct the ideal displaced state based on a polynomial expansion.</p>
+        <p>Construct the ideal displaced state.</p>
+<p>The displaced state is given by a low-order expansion around the corresponding
+bare state. For a drive frequency <span class="arithmatex">\(\omega_d\)</span> and drive amplitude <span class="arithmatex">\(\Omega_d\)</span>,
+the displaced state is given by,
+$$
+\left| \tilde{n} (\omega_d, \Omega_d) \right&gt; = \left| n \right&gt;
++ \sum_l \sum_{k_0, k_1} c_{n, l, k_0, k_1}
+\omega_d^{k_0} \Omega_d^{k_1} \left| l \right&gt;
+$$
+where the coefficients <span class="arithmatex">\(c_{n, l, k_0, k_1}\)</span> are provided in the <code>coefficients</code>
+argument. The constant term (i.e. <span class="arithmatex">\(k_0 = k_1 = 0\)</span>) is excluded from the fit.
+Note, that the <span class="arithmatex">\((k_0, k_1)\)</span> pairs are stacked, and provided by
+<code>self.exponent_pairs</code>.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+            <b><code>coefficients</code></b>
+              (<code><span title="numpy.ndarray">ndarray</span></code>)
+          –
+          <div class="doc-md-description">
+            <p>Coefficients to expand the displaced state in terms of the
+undriven states. Shape: <code>(num_states, hilbert_dim, num_fit_terms)</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>omega_d_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the drive
+frequency range. Selects all <code>self.model.omega_d_values</code> by default.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the amplitude
+range. Selects all self.model.drive_amplitudes by default. Selects
+all self.model.drive_amplitudes by default.</p>
+          </div>
+        </li>
+    </ul>
+
+
+<p><span class="doc-section-title">Returns:</span></p>
+    <ul>
+        <li class="doc-section-item field-body">
+              <code><span title="numpy.ndarray">ndarray</span></code>
+          –
+          <div class="doc-md-description">
+            <p>The displaced state(s) for the specified range of drive frequencies and
+drive amplitudes. Shape: <code>(num_omega_ds, num_amps, num_states,
+hilbert_dim)</code>.
+Careful, that the num_states index is the array index, not the state
+index! For example, if state_indices = [0, 2], then result[0, ...] is
+the displaced state for state index 0, and result[1, ...] is the
+displaced state for state index 2.</p>
+          </div>
+        </li>
+    </ul>
 
 
     </div>
@@ -1430,7 +1609,7 @@ coefficients</p>
 
 
 <h5 id="floquet.displaced_state.DisplacedStateFit.displaced_states_fit" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">displaced_states_fit</span><span class="p">(</span><span class="n">omega_d_amp_slice</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">ovlp_with_bare_states</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">displaced_states_fit</span><span class="p">(</span><span class="n">ovlp_with_bare_states</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">floquet_modes</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">omega_d_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">amp_idxs</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span></code>
 
 <a href="#floquet.displaced_state.DisplacedStateFit.displaced_states_fit" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1447,22 +1626,13 @@ specified in options.</p>
 <p><span class="doc-section-title">Parameters:</span></p>
     <ul>
         <li class="doc-section-item field-body">
-            <b><code>omega_d_amp_slice</code></b>
-              (<code><span title="list">list</span></code>)
-          –
-          <div class="doc-md-description">
-            <p>Pairs of omega_d, amplitude values at which the
-floquet modes have been computed and which we will use as the
-independent variables to fit the Floquet modes</p>
-          </div>
-        </li>
-        <li class="doc-section-item field-body">
             <b><code>ovlp_with_bare_states</code></b>
               (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
-            <p>Bare state overlaps that has shape (w, a, s) where w
-is drive frequency, a is drive amplitude and s is state_indices</p>
+            <p>Overlap with bare states. Already trimmed to the
+relevant range of frequencies and amplitudes.
+Shape: <code>(num_omega_d_in_range, num_amps_in_range, num_states)</code>.</p>
           </div>
         </li>
         <li class="doc-section-item field-body">
@@ -1470,9 +1640,30 @@ is drive frequency, a is drive amplitude and s is state_indices</p>
               (<code><span title="numpy.ndarray">ndarray</span></code>)
           –
           <div class="doc-md-description">
-            <p>Floquet mode array with the same shape as
-ovlp_with_bare_states except with an additional trailing dimension h,
-the Hilbert-space dimension.</p>
+            <p>Floquet modes.
+Shape: <code>(num_omega_ds, num_amps, num_states, hilbert_dim)</code>.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>omega_d_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the drive
+frequency range. Selects all <code>self.model.omega_d_values</code> by default.</p>
+          </div>
+        </li>
+        <li class="doc-section-item field-body">
+            <b><code>amp_idxs</code></b>
+              (<code><span title="tuple">tuple</span>[<span title="int">int</span>, <span title="int">int</span>]</code>, default:
+                  <code>(0, None)</code>
+)
+          –
+          <div class="doc-md-description">
+            <p>Indices specifying the lower and upper bound of the amplitude
+range. Selects all self.model.drive_amplitudes by default.</p>
           </div>
         </li>
     </ul>
@@ -1484,7 +1675,8 @@ the Hilbert-space dimension.</p>
               <code><span title="numpy.ndarray">ndarray</span></code>
           –
           <div class="doc-md-description">
-            <p>Optimized fit coefficients</p>
+            <p>Optimized fit coefficients.
+Shape: <code>(num_states, hilbert_dim, num_fit_terms)</code>.</p>
           </div>
         </li>
     </ul>
@@ -1661,26 +1853,8 @@ the drive frequency here.</p>
 <div class="doc doc-object doc-function">
 
 
-<h5 id="floquet.model.Model.omega_d_amp_params" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">omega_d_amp_params</span><span class="p">(</span><span class="n">amp_idxs</span><span class="p">:</span> <span class="nb">list</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span></code>
-
-<a href="#floquet.model.Model.omega_d_amp_params" class="headerlink" title="Permanent link">¤</a></h5>
-
-
-    <div class="doc doc-contents ">
-
-        <p>Return ordered chain object of the specified omega_d and amplitude values.</p>
-
-
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
 <h5 id="floquet.model.Model.hamiltonian" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">hamiltonian</span><span class="p">(</span><span class="n">omega_d_amp</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">qt</span><span class="o">.</span><span class="n">Qobj</span><span class="p">]</span></code>
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <code class="highlight language-python"><span class="n">hamiltonian</span><span class="p">(</span><span class="n">omega_d</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">amp</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">qt</span><span class="o">.</span><span class="n">QobjEvo</span></code>
 
 <a href="#floquet.model.Model.hamiltonian" class="headerlink" title="Permanent link">¤</a></h5>
 
@@ -1705,7 +1879,9 @@ the drive frequency here.</p>
 
     <div class="doc doc-contents ">
 
-        <p>Return array of bare states.</p>
+        <p>Return array of true bare states.</p>
+<p>Used to specify initial bare states and to compute average excitation
+number for the Blais branch analysis.</p>
 
 
     </div>
