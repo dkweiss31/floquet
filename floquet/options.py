@@ -4,7 +4,7 @@ from .utils.file_io import Serializable
 
 
 class Options(Serializable):
-    def __init__(
+    def __init__(  # noqa PLR0917
         self,
         fit_range_fraction: float = 1.0,
         floquet_sampling_time_fraction: float = 0.0,

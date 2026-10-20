@@ -31,7 +31,7 @@ hilbert_space.generate_lookup()
 evals = hilbert_space["evals"][0][0:num_states]
 # Define the Hamiltonian of the transmon in its eigenbasis, in which H0 is diagonal
 H0 = 2.0 * np.pi * qt.Qobj(np.diag(evals - evals[0]))
-# Use this helper method to define the charge-number operator in the dressed eigenbasis 
+# Use this helper method to define the charge-number operator in the dressed eigenbasis
 H1 = hilbert_space.op_in_dressed_eigenbasis(tmon.n_operator)
 ```
 We then also need to specify the drive frequencies we plan to drive at, which correspond to the cavity frequencies
@@ -43,7 +43,7 @@ Finally, we specify the induced ac-stark shift that we want the qubit to experie
 import floquet as ft
 
 state_indices = [0, 1]  # get data for ground and first excited states
-chi_ac_linspace = 2.0 * np.pi * np.linspace(0.0, 0.1, 59) # 100 MHz ac-Stark shift
+chi_ac_linspace = 2.0 * np.pi * np.linspace(0.0, 0.1, 59)  # 100 MHz ac-Stark shift
 chi_to_amp = ft.ChiacToAmp(H0, H1, state_indices, omega_d_linspace)
 drive_amplitudes = chi_to_amp.amplitudes_for_omega_d(chi_ac_linspace)
 ```
