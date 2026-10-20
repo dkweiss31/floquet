@@ -7,7 +7,7 @@ dependencies = [
     "numpy>=2.0",
     "scipy",
     "scqubits>=4.2",
-    "qutip>=5.0",
+    "qutip>=5.0,<5.3",  # 5.3 returns scipy csc_array instead of csc_matrix, unsupported by scqubits 4.3.1
     "matplotlib",
     "jupyter",
     "h5py",
@@ -21,24 +21,16 @@ build-backend = "flit_core.buildapi"
 
 [project.optional-dependencies]
 dev = [
-    "taskipy",
+    "taskipy>=1.14",  # older versions don't support the cmd/help table syntax used below
     "ruff",
     "codespell",
     "pygments",
     "pytest",
     "pytest-xdist",
     "pymdown-extensions",
-    "mkdocs",
-    "mkdocs-material",
-    "mkdocstrings[python]",
-    "mkdocs-gen-files",
-    "mkdocs-literate-nav",
-    "mkdocs-section-index",
-    "mkdocs-simple-hooks",
-    "mkdocs-glightbox",
-    "mkdocs-exclude",
-    "mknotebooks",
-    "nbconvert==6.5.0",
+    "zensical",
+    "mkdocstrings[python]>=1.0.7",  # <1.0.7 breaks with pymdown-extensions>=12.2 (missing 'md' arg)
+    "nbconvert",  # regenerate docs/examples/*.md from notebooks, see `task docs-convert-notebooks`
     "sybil[pytest]",
     "black",  # needed by mkdocstrings to format function signatures
 ]
@@ -114,11 +106,15 @@ cmd = 'echo "\n>>> pytest docs" && pytest docs'
 help = "check documentation examples (doctest)"
 
 [tool.taskipy.tasks.docbuild]
-cmd = 'mkdocs build'
+cmd = 'zensical build'
 help = "build the documentation website"
 
+[tool.taskipy.tasks.docs-convert-notebooks]
+cmd = 'python scripts/convert_notebooks.py'
+help = "regenerate docs/examples/*.md from the example notebooks (run after editing a notebook)"
+
 [tool.taskipy.tasks.docserve]
-cmd = 'mkdocs serve'
+cmd = 'zensical serve'
 help = "preview documentation website with hot-reloading"
 
 [tool.taskipy.tasks.all]

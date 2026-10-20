@@ -4,7 +4,7 @@ We welcome your contribution, whether it be additional cost functions, new funct
 
 ## Requirements
 
-The project was written using Python 3.10+, you must have a compatible version of Python (i.e. >= 3.10) installed on your computer.
+The project was written using Python 3.10+, you must have a compatible version of Python (i.e. >= 3.10) installed on your computer. Building the documentation (see below) requires Python 3.11+, since that's the minimum supported by [Zensical](https://zensical.org/).
 
 ## Setup
 
@@ -43,7 +43,7 @@ task all
 
 ### Build the documentation
 
-The documentation is built using [MkDocs](https://www.mkdocs.org/) and the [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/) theme. MkDocs generates a static website based on the markdown files in the `docs/` directory.
+The documentation is built using [Zensical](https://zensical.org/) with the Material for MkDocs `classic` theme. Zensical reads the same `mkdocs.yml` and generates a static website based on the markdown files in the `docs/` directory.
 
 To preview the changes to the documentation as you edit the docstrings or the markdown files in `docs/`, we recommend starting a live preview server, which will automatically rebuild the website upon modifications:
 
@@ -51,7 +51,7 @@ To preview the changes to the documentation as you edit the docstrings or the ma
 task docserve
 ```
 
-Open <http://localhost:8000/> in your web browser to preview the documentation website.
+Open <http://localhost:8000/floquet/> in your web browser to preview the documentation website (the `/floquet/` path mirrors `site_url` in `mkdocs.yml`).
 
 You can build the static documentation website locally with:
 
@@ -60,6 +60,14 @@ task docbuild
 ```
 
 This will create a `site/` directory with the contents of the documentation website. You can then simply open `site/index.html` in your web browser to view the documentation website.
+
+### Example notebooks
+
+`docs/examples/*.ipynb` are the source of truth for the tutorial notebooks, and are shipped as-is so readers can download and run them directly (linked from the top of each rendered page). Since Zensical can't render notebooks itself, each `.ipynb` is also exported to a `.md` page that Zensical does render. If you edit one of the notebooks, regenerate its `.md` export with:
+
+```shell
+task docs-convert-notebooks
+```
 
 ### Run specific tasks
 
