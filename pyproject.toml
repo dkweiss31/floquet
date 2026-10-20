@@ -28,17 +28,8 @@ dev = [
     "pytest",
     "pytest-xdist",
     "pymdown-extensions",
-    "mkdocs",
-    "mkdocs-material",
+    "zensical",
     "mkdocstrings[python]",
-    "mkdocs-gen-files",
-    "mkdocs-literate-nav",
-    "mkdocs-section-index",
-    "mkdocs-simple-hooks",
-    "mkdocs-glightbox",
-    "mkdocs-exclude",
-    "mknotebooks",
-    "nbconvert==6.5.0",
     "sybil[pytest]",
     "black",  # needed by mkdocstrings to format function signatures
 ]
@@ -114,11 +105,11 @@ cmd = 'echo "\n>>> pytest docs" && pytest docs'
 help = "check documentation examples (doctest)"
 
 [tool.taskipy.tasks.docbuild]
-cmd = 'mkdocs build'
+cmd = 'zensical build'
 help = "build the documentation website"
 
 [tool.taskipy.tasks.docserve]
-cmd = 'mkdocs serve'
+cmd = 'zensical serve'
 help = "preview documentation website with hot-reloading"
 
 [tool.taskipy.tasks.all]
