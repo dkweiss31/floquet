@@ -1,6 +1,6 @@
 [project]
 name = "floquet"
-version = "0.2.1"
+version = "0.2.2"
 requires-python = ">=3.10"
 description = "Floquet simulations for identifying resonances in quantum systems."
 readme = "README.md"
