@@ -62,7 +62,7 @@ If you found this package useful in academic work, please cite
 ```bibtex
 @misc{floquet2024,
   title  = {Floquet: Identifying nonlinear resonances in quantum systems due to parametric drives},
-  author = {Daniel K. Weiss},
+  author = {Daniel K. Weiss, Harshvardhan K. Babla},
   year   = {2024},
   howpublished    = {\url{https://github.com/dkweiss31/floquet}}
 }
