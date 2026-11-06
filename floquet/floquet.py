@@ -176,7 +176,9 @@ class FloquetAnalysis(Serializable):
         integral over floquet modes in one period.
         """
         bare_states = self.model.bare_state_array()
-        overlaps_sq = np.abs(np.einsum("ij,kj->ik", bare_states, f_modes_ordered)) ** 2
+        overlaps_sq = (
+            np.abs(np.einsum("ij,kj->ik", np.conj(bare_states), f_modes_ordered)) ** 2
+        )
         # sum over bare excitations weighted by excitation number
         return np.real(
             np.einsum("ik,i->k", overlaps_sq, np.arange(0, self.hilbert_dim))
@@ -260,6 +262,13 @@ class FloquetAnalysis(Serializable):
         num_amp_pts_per_range = int(
             np.floor(len(self.model.drive_amplitudes) / num_fit_ranges)
         )
+        if num_amp_pts_per_range == 0:
+            raise ValueError(
+                f"fit_range_fraction={self.options.fit_range_fraction} splits the "
+                f"{len(self.model.drive_amplitudes)} drive amplitudes into "
+                f"{num_fit_ranges} ranges, leaving some empty. Use more amplitudes "
+                "or a larger fit_range_fraction."
+            )
         for amp_range_idx in range(num_fit_ranges):
             print(f"calculating for amp_range_idx={amp_range_idx}")
             # edge case if range doesn't fit in neatly

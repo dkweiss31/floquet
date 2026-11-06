@@ -9,6 +9,7 @@ import scqubits as scq
 from floquet import (
     ChiacToAmp,
     DisplacedState,
+    DisplacedStateFit,
     FloquetAnalysis,
     Model,
     Options,
@@ -175,3 +176,48 @@ def test_displaced_bare_state(setup_floquet: tuple):
     for array_idx, state_idx in enumerate(floquet_transmon.state_indices):
         ideal_state = qt.basis(floquet_transmon.hilbert_dim, state_idx).full().squeeze()
         assert np.allclose(calc_state[array_idx], ideal_state)
+
+
+def _small_model(omega_d_values: np.ndarray, drive_amplitudes: np.ndarray) -> Model:
+    energies = 2.0 * np.pi * np.array([0.0, 5.0, 9.8, 14.4, 18.8])
+    H1 = np.diag(np.sqrt(np.arange(1, 5)), 1)
+    return Model(np.diag(energies), H1 + H1.T, omega_d_values, drive_amplitudes)
+
+
+def test_fit_with_too_few_points_returns_zeros():
+    """Regression: the early 'not enough data points' branch must return a pair."""
+    model = _small_model(
+        2.0 * np.pi * np.linspace(7.0, 7.2, 3), 2.0 * np.pi * np.linspace(0, 0.05, 4)
+    )
+    fit = DisplacedStateFit(model.H0.shape[0], model, [0, 1], Options())
+    num_terms = fit.exponent_pairs.shape[-1]
+    modes = np.zeros((3, 4, 2, model.H0.shape[0]), dtype=complex)
+    ovlps = np.zeros((3, 4, 2))  # everything masked out
+    with pytest.warns(UserWarning, match="Not enough data points"):
+        coeffs = fit.displaced_states_fit(ovlps, modes)
+    assert coeffs.shape == (2, model.H0.shape[0], num_terms)
+    assert not fit.fit_ok.any()
+
+
+@pytest.mark.filterwarnings("error::RuntimeWarning")
+@pytest.mark.parametrize(
+    ("omega_d_values", "fit_cutoff"),
+    [
+        (2.0 * np.pi * np.array([7.0]), 4),  # single drive frequency
+        (2.0 * np.pi * np.linspace(7.0, 7.2, 3), 1),  # no amplitude terms to fit
+    ],
+)
+def test_degenerate_fit_grids_run(omega_d_values: np.ndarray, fit_cutoff: int):
+    model = _small_model(omega_d_values, 2.0 * np.pi * np.linspace(0, 0.05, 5))
+    analysis = FloquetAnalysis(model, [0, 1], options=Options(fit_cutoff=fit_cutoff))
+    data = analysis.run()
+    assert np.all(np.isfinite(data["displaced_state_overlaps"]))
+
+
+def test_more_fit_ranges_than_amplitudes_raises():
+    model = _small_model(
+        2.0 * np.pi * np.array([7.0, 7.1]), 2.0 * np.pi * np.linspace(0, 0.05, 4)
+    )
+    analysis = FloquetAnalysis(model, [0, 1], options=Options(fit_range_fraction=0.2))
+    with pytest.raises(ValueError, match="fit_range_fraction"):
+        analysis.run()
