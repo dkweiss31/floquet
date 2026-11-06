@@ -29,8 +29,10 @@ class DisplacedState:
 
         omega_ds = model.omega_d_values
         omega_d_mid = 0.5 * (omega_ds.max() + omega_ds.min())
-        omega_d_half_range = 0.5 * (omega_ds.max() - omega_ds.min())
-        amp_scale = np.abs(model.drive_amplitudes).max()
+        # Guard against a single drive frequency / all-zero amplitudes, where the
+        # range is zero (only the zeroth power enters the fit in that case anyway).
+        omega_d_half_range = 0.5 * (omega_ds.max() - omega_ds.min()) or 1.0
+        amp_scale = np.abs(model.drive_amplitudes).max() or 1.0
 
         self.omega_d_scaled = (omega_ds - omega_d_mid) / omega_d_half_range
         self.amp_scaled = self.model.drive_amplitudes.T / amp_scale
@@ -292,13 +294,10 @@ class DisplacedStateFit(DisplacedState):
         num_fit_terms = self.exponent_pairs.shape[-1]
         mask_flat = mask.ravel()
 
-        # Warn if not enough data points to fit
-        if np.count_nonzero(mask_flat) < num_fit_terms:
-            warnings.warn(
-                "Not enough data points to fit. Returning zeros for the fit",
-                stacklevel=3,
-            )
-            return np.zeros((self.hilbert_dim, num_fit_terms), dtype=complex)
+        # No amplitude-dependent terms (fit_cutoff=1 or a single amplitude): the
+        # displaced state is just the bare state, nothing to fit.
+        if num_fit_terms == 0:
+            return np.zeros((self.hilbert_dim, 0), dtype=complex), True
 
         # Flatten and mask arrays. Resulting rows index masked amp-freq pairs.
         # For the poly_terms matrix, the cols index the fit terms.
